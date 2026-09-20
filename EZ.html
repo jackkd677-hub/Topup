@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TopUp Game & E-Wallet System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style> 
+        body { font-family: 'Noto Sans Lao', sans-serif; } 
+        .card { 
+            background: #ffffff; 
+            padding: 14px 16px; 
+            border-radius: 16px; 
+            border: 1px solid #f1f5f9; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.2s ease-in-out;
+        }
+        .card:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .card-title { font-weight: 600; font-size: 14px; color: #1e293b; }
+        .card-price { font-weight: 700; font-size: 14px; color: #16a34a; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 antialiased selection:bg-blue-500 selection:text-white">
+
+    <!-- Auth Container -->
+    <div id="authContainer" class="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700">
+        <div class="bg-white/95 backdrop-blur-md p-8 rounded-3xl shadow-2xl w-full max-w-md border border-white/20 transition-all">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner text-2xl font-black">
+                    💳
+                </div>
+                <h2 id="authTitle" class="text-2xl font-bold text-slate-800 tracking-tight">ເຂົ້າສູ່ລະບົບ</h2>
+                <p class="text-xs text-slate-500 mt-1">ຍິນດີຕ້ອນຮັບເຂົ້າສູ່ລະບົບ TopUp Game & E-Wallet</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">ຊື່ຜູ້ໃຊ້ (Username)</label>
+                    <input type="text" id="authUsername" placeholder="ປ້ອນຊື່ຜູ້ໃຊ້..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">ລະຫັດຜ່ານ (Password)</label>
+                    <input type="password" id="authPassword" placeholder="ປ້ອນລະຫັດຜ່ານ..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <button type="button" onclick="handleAuthSubmit()" id="authSubmitBtn" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 rounded-2xl shadow-lg transition transform active:scale-95 text-sm">
+                    ເຂົ້າສູ່ລະບົບ
+                </button>
+            </div>
+            <div class="mt-6 text-center">
+                <button type="button" onclick="toggleAuthMode()" id="authToggleBtn" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">
+                    ຍັງບໍ່ມີບັນຊີ? ສະໝັກສະມາຊິກ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Dashboard -->
+    <div id="userContainer" class="hidden min-h-screen pb-28 bg-slate-50">
+        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white p-6 rounded-b-[2.5rem] shadow-xl relative overflow-hidden">
+            <div class="max-w-md mx-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h1 id="userGreeting" class="text-xl font-bold tracking-tight">ສະບາຍດີ!</h1>
+                        <p id="userAccNo" class="text-xs text-blue-100 font-mono tracking-wide mt-0.5">ເລກບັນຊີ: -</p>
+                    </div>
+                    <span class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold border border-white/20"> Member </span>
+                </div>
+                <div class="mt-4 bg-white/10 backdrop-blur-md p-5 rounded-3xl border border-white/20 flex justify-between items-center shadow-inner">
+                    <div>
+                        <p class="text-xs text-blue-100 font-medium">ຍອດເງິນຄົງເຫຼືອ</p>
+                        <p id="userBalance" class="text-3xl font-extrabold tracking-tight mt-1">0 ₭</p>
+                    </div>
+                    <div id="userQRCode" onclick="showBigQrModal()" class="bg-white p-2 rounded-2xl cursor-pointer shadow-md hover:scale-105 transition" title="ກົດເພື່ອເບິ່ງຮູບໃຫຍ່"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 max-w-md mx-auto space-y-5 mt-2">
+            <!-- ແຖບ 1: ເຕີມເກມ -->
+            <div id="tab1" class="tab-page space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-slate-800">🎮 ເຕີມເກມອອນໄລນ໌</h2>
+                    <span class="text-xs text-slate-400 font-medium">ເລືອກເກມ & ແພັກເກັດ</span>
+                </div>
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ເລືອກເກມທີ່ຕ້ອງການເຕີມ:</label>
+                        <div id="gameTabButtons" class="flex gap-2"></div>
+                    </div>
+                    <div id="gameContentArea"></div>
+                    <button onclick="buyGamePackage()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl shadow-lg transition text-sm">
+                        🛒 ຊື້ເລີຍ
+                    </button>
+                </div>
+            </div>
+
+            <!-- ແຖບ 2: ປະຫວັດ -->
+            <div id="tab2" class="tab-page hidden space-y-4">
+                <h2 class="text-lg font-bold text-slate-800">📄 ປະຫວັດທຸລະກຳ</h2>
+                <div id="txHistoryList" class="space-y-2">
+                    <p class="text-center text-sm text-slate-400 py-8">ບໍ່ມີປະຫວັດທຸລະກຳ</p>
+                </div>
+            </div>
+
+            <!-- ແຖບ 3: ເຕີມເງິນ -->
+            <div id="tab3" class="tab-page hidden space-y-4">
+                <h2 class="text-lg font-bold text-slate-800">💳 ເຕີມເງິນເຂົ້າບັນຊີ (ບັດຫຼັກ 5 / 9)</h2>
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ເລືອກປະເພດບັດ:</label>
+                        <select id="cardTypeSelect" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 outline-none">
+                            <option value="5">ບັດຫຼັກ 5 (ລາຄາ: 8,000 ₭)</option>
+                            <option value="9">ບັດຫຼັກ 9 (ລາຄາ: 6,800 ₭)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">ກອກເລກບັດ (ຕົວເລກເທົ່ານັ້ນ):</label>
+                        <input type="text" id="inputCardPin" placeholder="ປ້ອນເລກບັດເຕີມເງິນ..." oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-mono text-lg font-bold tracking-widest outline-none">
+                    </div>
+                    <button onclick="submitCardTopUp()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-2xl shadow-lg transition text-sm">
+                        📩 ສົ່ງຂໍ້ມູນບັດ
+                    </button>
+                </div>
+                <div class="space-y-3">
+                    <button onclick="showQRTransferModal()" class="w-full bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center font-bold hover:border-green-500 transition">
+                        <span class="text-slate-700">3. ໂອນ (QR Bank)</span> <span class="text-emerald-600 text-xs bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">ສະແກນ QR</span>
+                    </button>
+                    <button onclick="switchTab(4)" class="w-full bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center font-bold hover:border-purple-500 transition">
+                        <span class="text-slate-700">4. ແລກໂຄ້ດ / ສະແກນ</span> <span class="text-purple-600 text-xs bg-purple-50 px-3 py-1 rounded-full border border-purple-200">ໄປໜ້າຕັ້ງຄ່າ</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ແຖບ 4: ຕັ້ງຄ່າ -->
+            <div id="tab4" class="tab-page hidden space-y-4">
+                <h2 class="text-lg font-bold text-slate-800">⚙️ ຕັ້ງຄ່າ & ສະແກນໂຄ້ດ</h2>
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 text-center space-y-3 shadow-sm">
+                    <h3 class="font-bold text-sm text-slate-700">📱 QR Code ບັນຊີຂອງທ່ານ</h3>
+                    <button onclick="showBigQrModal()" class="w-full bg-blue-50 text-blue-600 border border-blue-200 font-bold py-3 rounded-2xl transition text-sm">🔍 ເບິ່ງ QR Code ຂະໜາດໃຫຍ່</button>
+                </div>
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3">
+                    <h3 class="font-bold text-sm text-slate-700">📷 ສະແກນ QR / ແລກໂຄ້ດ</h3>
+                    <div id="reader" class="w-full rounded-2xl overflow-hidden hidden border border-slate-200"></div>
+                    <button onclick="toggleScanner()" id="scannerBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-2xl text-sm transition">📷 ເປີດກ້ອງສະແກນ QR</button>
+                    <div class="flex gap-2">
+                        <input type="text" id="inputRedeemCode" placeholder="ປ້ອນ/ສະແກນ ລະຫັດໂຄ້ດ..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none">
+                        <button onclick="redeemCodeAction()" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-3 rounded-2xl font-bold text-sm whitespace-nowrap transition">ແລກເງິນ</button>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3">
+                    <h3 class="font-bold text-sm text-slate-700">💸 ໂອນເງິນໃຫ້ບັນຊີອື່ນ</h3>
+                    <input type="text" id="transferTargetAcc" placeholder="ເລກບັນຊີຜູ້ຮັບ..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none">
+                    <input type="text" id="transferAmount" placeholder="ຈຳນວນເງິນ..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none">
+                    <button onclick="transferMoney()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-2xl text-sm shadow-md transition">ໂອນເງິນ</button>
+                </div>
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3">
+                    <button onclick="changePasswordPrompt()" class="w-full bg-slate-100 text-slate-700 py-3 rounded-2xl font-bold border border-slate-200 text-sm transition">🔑 ປ່ຽນລະຫັດຜ່ານ</button>
+                    <button onclick="deleteAccountPrompt()" class="w-full bg-rose-50 text-rose-600 py-3 rounded-2xl font-bold border border-rose-200 text-sm transition">❌ ລຶບບັນຊີ</button>
+                    <button onclick="logout()" class="w-full bg-rose-600 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition">🚪 ອອກຈາກບັນຊີ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Bar -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 flex justify-around p-3 shadow-2xl z-50 max-w-md mx-auto rounded-t-3xl">
+            <button onclick="switchTab(1)" class="flex flex-col items-center text-slate-500 hover:text-blue-600 transition"><span class="text-xl">🎮</span><span class="text-[10px] font-bold">ເຕີມເກມ</span></button>
+            <button onclick="switchTab(2)" class="flex flex-col items-center text-slate-500 hover:text-blue-600 transition"><span class="text-xl">📄</span><span class="text-[10px] font-bold">ປະຫວັດ</span></button>
+            <button onclick="switchTab(3)" class="flex flex-col items-center text-slate-500 hover:text-blue-600 transition"><span class="text-xl">💳</span><span class="text-[10px] font-bold">ເຕີມເງິນ</span></button>
+            <button onclick="switchTab(4)" class="flex flex-col items-center text-slate-500 hover:text-blue-600 transition"><span class="text-xl">⚙️</span><span class="text-[10px] font-bold">ຕັ້ງຄ່າ</span></button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="bigQrModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-3xl max-w-xs w-full text-center space-y-4 shadow-2xl">
+            <h3 class="font-bold text-lg text-slate-800">QR Code ຂອງທ່ານ</h3>
+            <p id="modalAccNo" class="text-xs text-slate-500 font-mono bg-slate-100 py-1 px-3 rounded-full inline-block"></p>
+            <div id="bigUserQRCode" class="flex justify-center p-4 bg-slate-50 rounded-2xl border border-slate-200"></div>
+            <button onclick="closeBigQrModal()" class="w-full bg-slate-800 text-white font-bold py-3 rounded-2xl text-sm">ປິດໜ້າຕ່າງ</button>
+        </div>
+    </div>
+
+    <div id="qrModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <h3 class="font-bold text-lg text-slate-800">ສະແກນ QR ໂອນເງິນ</h3>
+            <img id="adminQrDisplay" src="https://via.placeholder.com/250?text=No+QR+Image" class="mx-auto rounded-2xl max-h-60 border border-slate-200 object-contain shadow-sm">
+            <input type="text" id="qrTransferAmount" placeholder="ປ້ອນຈຳນວນເງິນທີ່ໂອນ..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none">
+            <button onclick="submitQRTransfer()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl shadow-md text-sm">ແຈ້ງໂອນເງິນ</button>
+            <button onclick="closeQRModal()" class="w-full bg-slate-100 text-slate-600 py-2.5 rounded-2xl font-bold text-sm">ຍົກເລີກ</button>
+        </div>
+    </div>
+
+    <!-- ================= ADMIN DASHBOARD ================= -->
+    <div id="adminContainer" class="hidden min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+        <div class="max-w-7xl mx-auto space-y-6">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-5">
+                <div class="flex items-center gap-3">
+                    <span class="p-2 bg-rose-500/10 text-rose-500 rounded-xl text-2xl border border-rose-500/20">👑</span>
+                    <div>
+                        <h1 class="text-2xl font-extrabold text-white tracking-tight">Admin Dashboard</h1>
+                        <p class="text-xs text-slate-400">ລະບົບຈັດການຫຼັງບ້ານ ແລະ ສ້າງ/ຈັດການປີ້ (Admin Only)</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 px-5 py-2.5 rounded-2xl text-xs font-bold transition">ອອກຈາກລະບົບ</button>
+            </div>
+
+            <!-- 🔥 White Luxury Ticket Creator 🔥 -->
+            <div class="bg-gray-900 p-6 rounded-3xl text-white max-w-full mx-auto shadow-2xl border border-amber-500/20 space-y-6">
+                <div class="flex items-center gap-3 border-b border-gray-800 pb-4">
+                    <div class="p-2.5 bg-amber-500/10 rounded-2xl border border-amber-500/30 text-amber-400">
+                        <i data-lucide="ticket" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-amber-400">🎟️ ລະບົບສ້າງປີ້ແລກປ່ຽນອັດຕະໂນມັດ (White Luxury Ticket Creator)</h3>
+                        <p class="text-xs text-gray-400">ກຳນົດເງື່ອນໄຂ, ສ້າງລະຫັດອັດຕະໂນມັດ, ສະສົມປີ້ ແລະ ອອກແບບປີ້ VIP</p>
+                    </div>
+                </div>
+
+                <!-- 1. ຟອມກອກຂໍ້ມູນ ແລະ ຕັ້ງຄ່າປີ້ -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-950 p-5 rounded-2xl border border-gray-800 text-xs">
+                    <div>
+                        <label class="block font-bold text-gray-300 mb-1">💰 ມູນຄ່າປີ້ (ກີບ):</label>
+                        <input type="number" id="tkAmount" placeholder="ເຊັ່ນ: 10000" value="10000" class="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-white outline-none focus:border-amber-400 font-bold">
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-gray-300 mb-1">🔄 ເງື່ອນໄຂການໃຊ້ງານ:</label>
+                        <select id="tkUsageType" onchange="toggleLimitInput()" class="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-white font-bold outline-none focus:border-amber-400">
+                            <option value="once">ໃຊ້ໄດ້ຄັ້ງດຽວ (Single Use)</option>
+                            <option value="daily">ໃຊ້ໄດ້ຕໍ່ມື້ (Daily Limit)</option>
+                            <option value="monthly">ໃຊ້ໄດ້ຕໍ່ເດືອນ (Monthly Limit)</option>
+                            <option value="yearly">ໃຊ້ໄດ້ຕໍ່ປີ (Yearly Limit)</option>
+                            <option value="unlimited">ຈັກເທື່ອກໍໄດ້ (Unlimited)</option>
+                            <option value="custom">ກຳນົດຈຳນວນເທື່ອ (Custom Limit)</option>
+                        </select>
+                    </div>
+
+                    <div id="customLimitBox" class="hidden">
+                        <label class="block font-bold text-gray-300 mb-1">🔢 ຈຳນວນເທື່ອທີ່ໃຊ້ໄດ້:</label>
+                        <input type="number" id="tkMaxUses" value="1" placeholder="ປ້ອນຈຳນວນເທື່ອ..." class="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-white outline-none focus:border-amber-400">
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-gray-300 mb-1">📅 ວັນທີເລີ່ມໃຊ້ໄດ້:</label>
+                        <input type="date" id="tkStartDate" class="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-xl text-white outline-none text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-gray-300 mb-1">⏳ ວັນທີໝົດອາຍຸ:</label>
+                        <input type="date" id="tkExpireDate" class="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-xl text-white outline-none text-xs">
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-gray-300 mb-1">👁️ ການຊ່ອນລະຫັດປີ້ (Hide Code):</label>
+                        <select id="cfgHideCode" class="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-white outline-none focus:border-amber-400">
+                            <option value="blur">Blur & Mask (ເບຼີລະຫັດ + ໃສ່ກອບຊ່ອນ)</option>
+                            <option value="hidden">Hidden Fully (ຊ່ອນລະຫັດຖາວອນ)</option>
+                            <option value="visible">Visible (ສະແດງລະຫັດຈະແຈ້ງ)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-gray-300 mb-1">🎨 ໂທນສີປີ້ (White Theme):</label>
+                        <select id="cfgTheme" class="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-white outline-none focus:border-amber-400">
+                            <option value="whiteGold">Pure White & Gold (ຂາວ-ທອງ VIP)</option>
+                            <option value="whiteSilver">Platinum Silver (ຂາວ-ເງິນ ພຣີມ່ຽມ)</option>
+                            <option value="whiteEmerald">White Emerald (ຂາວ-ມະນີໂຊດ)</option>
+                            <option value="whiteRose">Rose Gold White (ຂາວ-ໂຣສໂກລ)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-gray-300 mb-1">✨ ລວດລາຍພື້ນຫຼັງ (Pattern):</label>
+                        <select id="cfgPattern" class="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-white outline-none focus:border-amber-400">
+                            <option value="waves">Luxury Waves (ຄື້ນລວດລາຍ)</option>
+                            <option value="grid">Geometric Mesh (ຕາໜ່າງມິຕິ)</option>
+                            <option value="dots">Dots Matrix (ຈຸດດິຈິທອນ)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="generateCustomTicketProcess()" class="w-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-600 hover:to-yellow-500 text-gray-950 font-black py-3.5 rounded-2xl shadow-xl hover:shadow-amber-500/20 transition-all transform active:scale-[0.99] flex justify-center items-center gap-2 text-base tracking-wide">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                    <span>ກົດເພື່ອສ້າງປີ້ອັດຕະໂນມັດ, ບັນທຶກສະສົມ ແລະ ເບິ່ງ Popup Share</span>
+                </button>
+
+                <!-- ສ່ວນສະແກນປີ້ Admin -->
+                <div class="bg-gray-950 p-5 rounded-2xl border border-gray-800 space-y-3">
+                    <h4 class="font-bold text-emerald-400 text-sm flex items-center gap-2">
+                        <span>🔍</span> ສະແກນ & ແລກປີ້ໃຫ້ລູກຄ້າ
+                    </h4>
+                    <div id="adminReader" class="w-full rounded-2xl overflow-hidden hidden border border-emerald-500/50 my-2"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="adminTicketInput" placeholder="ປ້ອນ ຫຼື ສະແກນລະຫັດປີ້/ໂຄ້ດ..." class="flex-1 p-3 bg-gray-900 border border-gray-700 rounded-xl text-white outline-none focus:border-emerald-500 text-xs font-mono">
+                        <button type="button" onclick="toggleAdminScanner()" id="adminScannerBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-3 rounded-xl font-bold text-xs transition">📷 ເປີດກ້ອງ</button>
+                        <button type="button" onclick="adminScanTicketAction()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3 rounded-xl font-bold text-xs transition shadow-lg shadow-emerald-600/20">✔️ ແລກປີ້</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🔥 ຕາຕະລາງສະສົມປີ້ທັງໝົດ 🔥 -->
+            <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4">
+                <h3 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                    <span>🎟️</span> ປະຫວັດ ແລະ ລາຍຊື່ປີ້ທີ່ສ້າງໄວ້ທັງໝົດ (Accumulated Tickets)
+                </h3>
+                <div class="overflow-x-auto rounded-2xl border border-slate-800">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-800/80 text-slate-200">
+                            <tr>
+                                <th class="p-4">ລະຫັດປີ້</th>
+                                <th class="p-4">ມູນຄ່າ (₭)</th>
+                                <th class="p-4">ຈຳນວນຄັ້ງທີ່ໃຊ້</th>
+                                <th class="p-4">ສະຖານະ</th>
+                                <th class="p-4 text-center">ຈັດການ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTicketTableBody" class="divide-y divide-slate-800">
+                            <tr><td colspan="5" class="p-4 text-center text-slate-500">ກຳລັງໂຫຼດຂໍ້ມູນ...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Admin Action Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 💰 ຈັດການເງິນ -->
+                <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-4 shadow-xl">
+                    <h3 class="text-lg font-bold text-amber-400 flex items-center gap-2"><span>💰</span> ຈັດການເງິນ</h3>
+                    <input type="text" id="adminUserTarget" placeholder="ຊື່ຜູ້ໃຊ້..." class="w-full p-3 bg-slate-800 border border-slate-700 rounded-2xl text-white text-xs outline-none">
+                    <input type="text" id="adminAmount" placeholder="ຈຳນວນເງິນ..." class="w-full p-3 bg-slate-800 border border-slate-700 rounded-2xl text-white text-xs outline-none">
+                    <div class="flex gap-2 pt-1">
+                        <button onclick="adminAdjustBalance('add')" class="w-1/2 bg-emerald-600 hover:bg-emerald-500 py-3 rounded-2xl font-bold text-xs text-white transition">+ ເພີ່ມເງິນ</button>
+                        <button onclick="adminAdjustBalance('deduct')" class="w-1/2 bg-rose-600 hover:bg-rose-500 py-3 rounded-2xl font-bold text-xs text-white transition">- ລຶບເງິນ</button>
+                    </div>
+                </div>
+
+                <!-- 🖼️ ເລືອກຮູບ QR Bank -->
+                <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-4 shadow-xl">
+                    <h3 class="text-lg font-bold text-purple-400 flex items-center gap-2"><span>🖼️</span> ເລືອກຮູບ QR Bank</h3>
+                    <input type="file" id="adminQrFileInput" accept="image/*" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-500/10 file:text-purple-400 hover:file:bg-purple-500/20">
+                    <button onclick="uploadAdminQrImage()" class="w-full bg-purple-600 hover:bg-purple-500 py-3 rounded-2xl font-bold text-xs text-white transition shadow-lg shadow-purple-600/20">💾 ບັນທຶກ QR</button>
+                </div>
+            </div>
+
+            <!-- Pending Transactions Panel -->
+            <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4">
+                <h3 class="text-lg font-bold text-amber-400 flex items-center gap-2"><span>⏳</span> ລາຍການລໍຖ້າອະນຸມັດ</h3>
+                <div id="adminPendingTxList" class="space-y-3">ກຳລັງໂຫຼດ...</div>
+            </div>
+
+            <!-- Users Table Panel -->
+            <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4">
+                <h3 class="text-lg font-bold text-emerald-400 flex items-center gap-2"><span>👥</span> ລາຍຊື່ຜູ້ໃຊ້ທັງໝົດ (ສະແດງລະຫັດຜ່ານ)</h3>
+                <div class="overflow-x-auto rounded-2xl border border-slate-800">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-800/80 text-slate-200">
+                            <tr>
+                                <th class="p-4">Username</th>
+                                <th class="p-4 text-amber-400">Password</th>
+                                <th class="p-4">ເລກບັນຊີ</th>
+                                <th class="p-4">ຍອດເງິນ</th>
+                                <th class="p-4">ສະຖານະ</th>
+                                <th class="p-4 text-center">ຈັດການ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminUserTableBody" class="divide-y divide-slate-800"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Popup ປີ້ແລກປ່ຽນ Share & Download -->
+    <div id="ticketShareModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden items-center justify-center p-4 z-50 transition-all duration-300">
+        <div class="bg-gray-900 border border-amber-500/30 p-6 rounded-3xl max-w-lg w-full text-center space-y-5 shadow-2xl relative">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                    <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+                    <span>ສ້າງປີ້ແລກປ່ຽນອັດຕະໂນມັດສຳເລັດ!</span>
+                </h3>
+                <button onclick="closeShareModal()" class="text-gray-400 hover:text-white p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="flex justify-center bg-gray-950 p-2 rounded-2xl border border-gray-800">
+                <canvas id="popupTicketCanvas" width="800" height="420" class="w-full max-w-full h-auto rounded-xl shadow-lg"></canvas>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                <button onclick="shareTicketImage()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition flex justify-center items-center gap-2 text-xs">
+                    <i data-lucide="share-2" class="w-4 h-4"></i>
+                    <span>ແຊຣ໌ປີ້ (Share)</span>
+                </button>
+                <button onclick="downloadTicketCanvas()" class="bg-amber-500 hover:bg-amber-600 text-gray-950 font-bold py-3 rounded-xl transition flex justify-center items-center gap-2 text-xs">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>ດາວໂຫຼດຮູບ</span>
+                </button>
+                <button onclick="copyTicketCodeText()" class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-xl transition flex justify-center items-center gap-2 text-xs border border-gray-700">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                    <span>ກັອບປີ້ລະຫັດ</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://vlryowpyjshpxmlarzql.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_DnqcHhHr6kawEAVIA3avMA_zeAz7FoZ';
+        
+        // ⚠️ ໃສ່ DISCORD WEBHOOK URL ຂອງເຈົ້າຢູ່ບ່ອນນີ້:
+        const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1550155876914958509/VzIEiLvBryv8ftFq8I0U-BW71k7Occxt434dDkWckH64jy9lwvVuNmZjMzBYe7cQc_Cr';
+        const ROBLOX_GROUP_URL = 'https://www.roblox.com/share/g/177046894'; 
+
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentUser = null;
+        let isRegisterMode = false;
+        
+        let html5QrcodeScanner = null;
+        let isScannerActive = false;
+        
+        let adminHtml5QrcodeScanner = null;
+        let isAdminScannerActive = false;
+
+        let userRealtimeChannel = null;
+        let adminRealtimeChannel = null;
+
+        const ROBUX_RATE = 150; 
+        let robloxType = 'group'; 
+
+        const WHITE_THEMES = {
+            whiteGold: { bg1: '#ffffff', bg2: '#fcfbf7', border: '#d97706', borderLight: '#fef3c7', textHeader: '#b45309', textPrice: '#059669', badgeBg: '#fffbeb', badgeBorder: '#fcd34d', badgeText: '#92400e' },
+            whiteSilver: { bg1: '#ffffff', bg2: '#f8fafc', border: '#64748b', borderLight: '#e2e8f0', textHeader: '#334155', textPrice: '#2563eb', badgeBg: '#f1f5f9', badgeBorder: '#cbd5e1', badgeText: '#1e293b' },
+            whiteEmerald: { bg1: '#ffffff', bg2: '#f0fdf4', border: '#059669', borderLight: '#d1fae5', textHeader: '#047857', textPrice: '#047857', badgeBg: '#ecfdf5', badgeBorder: '#6ee7b7', badgeText: '#065f46' },
+            whiteRose: { bg1: '#ffffff', bg2: '#fff1f2', border: '#e11d48', borderLight: '#ffe4e6', textHeader: '#be123c', textPrice: '#d97706', badgeBg: '#fff1f2', badgeBorder: '#fca5a5', badgeText: '#9f1239' }
+        };
+
+        let activeGeneratedCode = '';
+
+        let freeFirePackages = [
+            { name: "33 💎", price: 9000 },
+            { name: "68 💎", price: 16000 },
+            { name: "172 💎", price: 36000 },
+            { name: "310 💎", price: 62000 },
+            { name: "517 💎", price: 102000 },
+            { name: "690 💎", price: 136000 },
+            { name: "1,052 💎", price: 199000 },
+            { name: "1,801 💎", price: 336000 },
+            { name: "3,698 💎", price: 661000 },
+            { name: "ເຕີມໂຕເລເວວ 6", price: 9000 },
+            { name: "ເຕີມໂຕເລເວວ 10", price: 14000 },
+            { name: "ເຕີມໂຕເລເວວ 15", price: 14000 },
+            { name: "ເຕີມໂຕເລເວວ 20", price: 14000 },
+            { name: "ເຕີມໂຕເລເວວ 25", price: 14000 },
+            { name: "ເຕີມໂຕເລເວວ 30", price: 18000 },
+            { name: "ບັດລາຍອາທິດ", price: 46000 },
+            { name: "ບັດລາຍເດືອນ", price: 201000 },
+            { name: "ບັດລາຍອາທິດມິນິ", price: 25000 },
+            { name: "BP Card (BOOYAH PASS CARD)", price: 62000 }
+        ];
+
+        let gameList = [
+            { id: 'freefire', name: '🔥 Free Fire' },
+            { id: 'roblox', name: '🧱 Roblox' }
+        ];
+
+        let selectedGameId = 'freefire';
+
+        // 🔥 ຟັງຊັນສົ່ງແຈ້ງເຕືອນ Discord ທີ່ແກ້ໄຂແລ້ວ
+        async function sendDiscordNotification(content) {
+            if (!DISCORD_WEBHOOK_URL || DISCORD_WEBHOOK_URL.includes('YOUR_DISCORD') || DISCORD_WEBHOOK_URL === '') {
+                console.log('⚠️ ບໍ່ໄດ້ກຳນົດ Discord Webhook URL ຫຼື ເປັນຄ່າ Default');
+                return;
+            }
+            try {
+                const response = await fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify({ content: content })
+                });
+                if (!response.ok) {
+                    console.error('❌ ສົ່ງ Discord Webhook ບໍ່ສຳເລັດ:', response.statusText);
+                } else {
+                    console.log('✅ ສົ່ງແຈ້ງເຕືອນລົງ Discord ສຳເລັດ!');
+                }
+            } catch (err) {
+                console.error('❌ ເກີດຂໍ້ຜິດພາດໃນການສົ່ງ Discord Webhook:', err);
+            }
+        }
+
+        function playSound(type) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'money') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, ctx.currentTime); 
+                    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); 
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.4);
+                } else if (type === 'notify') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.3);
+                }
+            } catch (e) {
+                console.log('Sound play error:', e);
+            }
+        }
+
+        function setupRealtimeListeners() {
+            if (!currentUser) return;
+
+            if (userRealtimeChannel) db.removeChannel(userRealtimeChannel);
+            if (adminRealtimeChannel) db.removeChannel(adminRealtimeChannel);
+
+            if (currentUser.role === 'user') {
+                userRealtimeChannel = db.channel(`user-realtime-${currentUser.id}`)
+                    .on(
+                        'postgres_changes',
+                        { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${currentUser.id}` },
+                        (payload) => {
+                            const newUserData = payload.new;
+                            if (newUserData.balance > currentUser.balance) {
+                                playSound('money');
+                            }
+                            currentUser = { ...currentUser, ...newUserData };
+                            localStorage.setItem('app_user_session', JSON.stringify(currentUser));
+                            
+                            if (newUserData.is_banned) {
+                                checkBanAndLoad();
+                            } else {
+                                const balEl = document.getElementById('userBalance');
+                                if (balEl) balEl.innerText = `${(currentUser.balance || 0).toLocaleString()} ₭`;
+                            }
+                        }
+                    )
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'transactions', filter: `username=eq.${currentUser.username}` },
+                        () => {
+                            playSound('notify');
+                            loadTxHistory();
+                        }
+                    )
+                    .subscribe();
+            } else if (currentUser.role === 'admin') {
+                adminRealtimeChannel = db.channel('admin-realtime-all')
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'transactions' },
+                        () => {
+                            playSound('notify');
+                            loadAdminData();
+                        }
+                    )
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'users' },
+                        () => {
+                            loadAdminData();
+                        }
+                    )
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'promo_codes' },
+                        () => {
+                            loadAdminData();
+                        }
+                    )
+                    .subscribe();
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            toggleLimitInput();
+
+            const savedSession = localStorage.getItem('app_user_session');
+            if (savedSession) {
+                try {
+                    const sessionData = JSON.parse(savedSession);
+                    if (sessionData.role === 'admin') {
+                        currentUser = sessionData;
+                        showAdminUI();
+                    } else {
+                        currentUser = sessionData;
+                        checkBanAndLoad();
+                    }
+                } catch (e) {
+                    localStorage.removeItem('app_user_session');
+                }
+            }
+        });
+
+        function parseKipAmount(str) {
+            if(!str) return 0;
+            let valStr = str.toString().trim().toLowerCase();
+            let isK = valStr.includes('k');
+            valStr = valStr.replace(/k|kip|ກີບ|ກ|₭|\s|,/g, '');
+            let num = parseFloat(valStr) || 0;
+            return isK ? num * 1000 : num;
+        }
+
+        function parseRobuxInput(input) {
+            if(!input) return { robux: 0, kip: 0 };
+            let str = input.toString().trim().toLowerCase();
+            if (str.match(/r|robux|ໂລບັກ|ໂຣບັກ/)) {
+                let rVal = parseFloat(str.replace(/r|robux|ໂລບັກ|ໂຣບັກ|\s|,/g, '')) || 0;
+                let kVal = Math.ceil(rVal * ROBUX_RATE);
+                return { robux: rVal, kip: kVal };
+            } else {
+                let kVal = parseKipAmount(str);
+                let rVal = Math.floor(kVal / ROBUX_RATE);
+                return { robux: rVal, kip: kVal };
+            }
+        }
+
+        function generateRandomTicketCode() {
+            const randomLength = Math.floor(Math.random() * (20 - 8 + 1)) + 8;
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let randomStr = '';
+            for (let i = 0; i < randomLength; i++) {
+                randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return `Ticket-${randomStr}-Ticket`;
+        }
+
+        function toggleLimitInput() {
+            const type = document.getElementById('tkUsageType').value;
+            const box = document.getElementById('customLimitBox');
+            if (type === 'custom' || type === 'once') box.classList.remove('hidden');
+            else box.classList.add('hidden');
+        }
+
+        function drawPattern(ctx, pattern, w, h, strokeColor) {
+            ctx.save();
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 1;
+
+            if (pattern === 'grid') {
+                for (let i = -h; i < w + h; i += 24) {
+                    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + h, h); ctx.stroke();
+                }
+            } else if (pattern === 'waves') {
+                for (let y = 0; y < h; y += 28) {
+                    ctx.beginPath();
+                    for (let x = 0; x < w; x += 10) {
+                        ctx.lineTo(x, y + Math.sin(x * 0.03) * 6);
+                    }
+                    ctx.stroke();
+                }
+            } else if (pattern === 'dots') {
+                ctx.fillStyle = strokeColor;
+                for (let x = 20; x < w; x += 25) {
+                    for (let y = 20; y < h; y += 25) {
+                        ctx.beginPath(); ctx.arc(x, y, 1.5, 0, Math.PI * 2); ctx.fill();
+                    }
+                }
+            }
+            ctx.restore();
+        }
+
+        function renderCanvasTicket(canvasId, ticketData) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            const theme = WHITE_THEMES[ticketData.themeKey || 'whiteGold'];
+
+            ctx.clearRect(0, 0, w, h);
+
+            const bgGrad = ctx.createLinearGradient(0, 0, w, h);
+            bgGrad.addColorStop(0, theme.bg1);
+            bgGrad.addColorStop(1, theme.bg2);
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            drawPattern(ctx, ticketData.patternKey || 'waves', w, h, 'rgba(217, 119, 6, 0.07)');
+
+            ctx.strokeStyle = theme.border;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(18, 18, w - 36, h - 36);
+
+            ctx.strokeStyle = theme.borderLight;
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(26, 26, w - 52, h - 52);
+
+            ctx.fillStyle = '#ffffff'; 
+            ctx.beginPath(); ctx.arc(0, h / 2, 20, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w, h / 2, 20, 0, Math.PI * 2); ctx.fill();
+
+            ctx.setLineDash([6, 6]);
+            ctx.strokeStyle = theme.border;
+            ctx.beginPath(); ctx.moveTo(520, 35); ctx.lineTo(520, h - 35); ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = theme.textHeader;
+            ctx.font = 'bold 36px "Noto Sans Lao", sans-serif';
+            ctx.fillText('ປີ້ແລກປ່ຽນ', 50, 85);
+
+            ctx.fillStyle = '#4b5563';
+            ctx.font = 'bold 20px "Noto Sans Lao", sans-serif';
+            ctx.fillText('ຈຳນວນ:', 50, 145);
+
+            ctx.fillStyle = theme.textPrice;
+            ctx.font = 'bold 44px "Noto Sans Lao", sans-serif';
+            ctx.fillText(`${(ticketData.amount || 0).toLocaleString()} ກີບ`, 140, 150);
+
+            ctx.fillStyle = '#374151';
+            ctx.font = '500 19px "Noto Sans Lao", sans-serif';
+            ctx.fillText(`ໃຊ້ໄດ້ວັນທີ: ${ticketData.dateText}`, 50, 215);
+
+            ctx.fillStyle = theme.badgeBg;
+            ctx.beginPath(); ctx.roundRect(50, 250, 430, 48, 12); ctx.fill();
+            ctx.strokeStyle = theme.badgeBorder; ctx.lineWidth = 1; ctx.stroke();
+
+            ctx.fillStyle = theme.badgeText;
+            ctx.font = 'bold 17px "Noto Sans Lao", sans-serif';
+            ctx.fillText(`ເງື່ອນໄຂ: ${ticketData.conditionText}`, 65, 280);
+
+            ctx.font = '15px monospace';
+            if (ticketData.hideMode === 'blur') {
+                ctx.fillStyle = '#9ca3af';
+                ctx.fillText('CODE: Ticket-XXXXXXXXXX-Ticket', 50, 345);
+                ctx.fillStyle = 'rgba(220, 38, 38, 0.1)';
+                ctx.fillRect(100, 330, 260, 22);
+                ctx.fillStyle = '#dc2626';
+                ctx.font = 'bold 12px "Noto Sans Lao", sans-serif';
+                ctx.fillText('🔒 [ລະຫັດຖືກຊ່ອນໄວ້ - ສະແກນ QR ເທົ່ານັ້ນ]', 105, 346);
+            } else if (ticketData.hideMode === 'hidden') {
+                ctx.fillStyle = '#dc2626';
+                ctx.font = 'bold 14px "Noto Sans Lao", sans-serif';
+                ctx.fillText('🔒 ລະຫັດຖືກຊ່ອນ (Protected Code)', 50, 345);
+            } else {
+                ctx.fillStyle = '#4b5563';
+                ctx.fillText(`CODE: ${ticketData.code}`, 50, 345);
+            }
+
+            const qrImage = new Image();
+            qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(ticketData.code)}`;
+            qrImage.crossOrigin = 'anonymous';
+            qrImage.onload = function() {
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath(); ctx.roundRect(550, 95, 200, 200, 16); ctx.fill();
+                ctx.strokeStyle = theme.border; ctx.lineWidth = 1.5; ctx.stroke();
+
+                ctx.drawImage(qrImage, 560, 105, 180, 180);
+
+                ctx.fillStyle = theme.textHeader;
+                ctx.font = 'bold 16px "Noto Sans Lao", sans-serif';
+                ctx.fillText('ສະແກນເພື່ອແລກ', 585, 330);
+            };
+        }
+
+        async function generateCustomTicketProcess() {
+            const amount = parseFloat(document.getElementById('tkAmount').value) || 0;
+            const usageType = document.getElementById('tkUsageType').value;
+            const startDate = document.getElementById('tkStartDate').value;
+            const expireDate = document.getElementById('tkExpireDate').value;
+            const hideMode = document.getElementById('cfgHideCode').value;
+            const themeKey = document.getElementById('cfgTheme').value;
+            const patternKey = document.getElementById('cfgPattern').value;
+
+            if (amount <= 0) return alert('❌ ກະລຸນາກອກມູນຄ່າປີ້ໃຫ້ຖືກຕ້ອງ!');
+
+            activeGeneratedCode = generateRandomTicketCode();
+
+            let maxUses = 1;
+            let conditionText = 'ໃຊ້ໄດ້ຄັ້ງດຽວເທົ່ານັ້ນ';
+
+            if (usageType === 'daily') conditionText = 'ໃຊ້ໄດ້ 1 ຄັ້ງ / ຕໍ່ມື້';
+            else if (usageType === 'monthly') conditionText = 'ໃຊ້ໄດ້ 1 ຄັ້ງ / ຕໍ່ເດືອນ';
+            else if (usageType === 'yearly') conditionText = 'ໃຊ້ໄດ້ 1 ຄັ້ງ / ຕໍ່ປີ';
+            else if (usageType === 'unlimited') {
+                conditionText = 'ໃຊ້ໄດ້ເລື້ອຍໆ (Unlimited)';
+                maxUses = 999999;
+            } else if (usageType === 'custom') {
+                maxUses = parseInt(document.getElementById('tkMaxUses').value) || 1;
+                conditionText = `ໃຊ້ໄດ້ຈຳນວນ ${maxUses} ເທື່ອ`;
+            }
+
+            let dateText = 'ໃຊ້ໄດ້ຕະຫຼອດໄປ';
+            if (startDate && expireDate) dateText = `${startDate} ຫາ ${expireDate}`;
+            else if (startDate) dateText = `ເລີ່ມ ${startDate}`;
+            else if (expireDate) dateText = `ໝົດອາຍຸ ${expireDate}`;
+
+            const { error } = await db.from('promo_codes').insert([{
+                code: activeGeneratedCode,
+                amount: amount,
+                max_uses: maxUses,
+                current_uses: 0,
+                start_date: startDate ? new Date(startDate).toISOString() : null,
+                expire_date: expireDate ? new Date(expireDate).toISOString() : null
+            }]);
+
+            if (error) {
+                alert('❌ ບໍ່ສາມາດບັນທຶກປີ້ລົງລະບົບໄດ້: ' + error.message);
+                return;
+            }
+
+            // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອສ້າງປີ້
+            sendDiscordNotification(`🎟️ **Admin ສ້າງປີ້ແລກເງິນໃໝ່**\n- ລະຫັດປີ້: \`${activeGeneratedCode}\`\n- ມູນຄ່າ: ${amount.toLocaleString()} ₭\n- ເງື່ອນໄຂ: ${conditionText}`);
+
+            renderCanvasTicket('popupTicketCanvas', {
+                amount, code: activeGeneratedCode, conditionText, dateText, hideMode, themeKey, patternKey
+            });
+
+            const modal = document.getElementById('ticketShareModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            loadAdminData();
+        }
+
+        async function shareTicketImage() {
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: '🎟️ ປີ້ແລກປ່ຽນສ່ວນຫຼຸດ',
+                        text: `🎟️ ເຈົ້າໄດ້ຮັບປີ້ແລກປ່ຽນ!\n📌 ລະຫັດ: ${activeGeneratedCode}\nນຳລະຫັດນີ້ໄປສະແກນແລກເງິນໄດ້ເລີຍ!`,
+                    });
+                } catch (e) {}
+            } else {
+                copyTicketCodeText();
+            }
+        }
+
+        function downloadTicketCanvas() {
+            const canvas = document.getElementById('popupTicketCanvas');
+            const link = document.createElement('a');
+            link.download = `VIP-White-Ticket-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function copyTicketCodeText() {
+            navigator.clipboard.writeText(activeGeneratedCode);
+            alert('📋 ກັອບປີ້ລະຫັດປີ້: ' + activeGeneratedCode + ' ສຳເລັດແລ້ວ!');
+        }
+
+        function closeShareModal() {
+            const modal = document.getElementById('ticketShareModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function renderGameTabs() {
+            const tabContainer = document.getElementById('gameTabButtons');
+            if (!tabContainer) return;
+            tabContainer.innerHTML = gameList.map(game => `
+                <button type="button" onclick="selectGameTab('${game.id}')" 
+                    id="tab_btn_${game.id}" 
+                    class="game-tab-btn flex-1 py-2.5 px-3 text-xs font-bold rounded-2xl border transition ${selectedGameId === game.id ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200'}">
+                    ${game.name}
+                </button>
+            `).join('');
+            renderGameContent();
+        }
+
+        function selectGameTab(gameId) {
+            selectedGameId = gameId;
+            document.querySelectorAll('.game-tab-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600', 'shadow-sm');
+                btn.classList.add('bg-slate-50', 'text-slate-600', 'border-slate-200');
+            });
+            const activeBtn = document.getElementById(`tab_btn_${gameId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-50', 'text-slate-600', 'border-slate-200');
+                activeBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-600', 'shadow-sm');
+            }
+            renderGameContent();
+        }
+
+        function switchRobloxType(type) {
+            robloxType = type;
+            renderGameContent();
+        }
+
+        function renderGameContent() {
+            const container = document.getElementById('gameContentArea');
+            if (!container) return;
+
+            if (selectedGameId === 'freefire') {
+                container.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">ID ເກມ Free Fire (UID):</label>
+                        <input type="text" id="gameUID" placeholder="ປ້ອນ UID ເກມ Free Fire..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none transition mb-3">
+                    </div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ເລືອກແພັກເກັດ Free Fire:</label>
+                    <div class="max-h-60 overflow-y-auto space-y-2 pr-1">
+                        ${freeFirePackages.map((pkg, idx) => `
+                            <div class="card cursor-pointer" onclick="document.getElementById('pkg_${idx}').checked = true">
+                                <div class="flex items-center gap-2">
+                                    <input type="radio" name="selectedPkg" id="pkg_${idx}" value="${idx}" ${idx === 0 ? 'checked' : ''} class="w-4 h-4 text-blue-600">
+                                    <label for="pkg_${idx}" class="card-title cursor-pointer">${pkg.name}</label>
+                                </div>
+                                <span class="card-price">${pkg.price.toLocaleString()} ₭</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (selectedGameId === 'roblox') {
+                container.innerHTML = `
+                    <div class="flex gap-2 mb-3 bg-slate-100 p-1 rounded-2xl border border-slate-200">
+                        <button type="button" onclick="switchRobloxType('group')" class="flex-1 py-2 text-xs font-bold rounded-xl transition ${robloxType === 'group' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-600'}">👥 ເຕີມຜ່ານກຸ່ມ</button>
+                        <button type="button" onclick="switchRobloxType('idpass')" class="flex-1 py-2 text-xs font-bold rounded-xl transition ${robloxType === 'idpass' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-600'}">🆔 ເຕີມຜ່ານ ID</button>
+                    </div>
+
+                    ${robloxType === 'group' ? `
+                        <div class="p-3.5 bg-purple-50 border border-purple-200 rounded-2xl mb-3 text-xs text-purple-900">
+                            <p class="font-bold">⚠️ ສຳຄັນ:</p>
+                            <p class="mt-0.5">1. ຕ້ອງກົດເຂົ້າກຸ່ມ Roblox ກ່ອນເຕີມ!</p>
+                            <a href="${ROBLOX_GROUP_URL}" target="_blank" class="inline-block mt-1.5 text-purple-600 font-bold underline">🔗 ກົດບ່ອນນີ້ເພື່ອເຂົ້າກຸ່ມ Roblox</a>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">ຊື່ Roblox (Username):</label>
+                            <input type="text" id="robloxUsername" placeholder="ປ້ອນຊື່ Roblox..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none mb-3">
+                        </div>
+                    ` : `
+                        <div class="space-y-2 mb-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">ID / Username Roblox:</label>
+                                <input type="text" id="robloxUsername" placeholder="ປ້ອນ ID / Username..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none">
+                            </div>
+                        </div>
+                    `}
+
+                    <div class="bg-purple-50/60 p-4 rounded-2xl border border-purple-200/80 space-y-3">
+                        <label class="block text-xs font-bold text-purple-900 uppercase tracking-wider">ປ້ອນຈຳນວນ Robux ຫຼື ເງິນກີບ (1 R = ${ROBUX_RATE} ₭):</label>
+                        <input type="text" id="robloxInput" oninput="calculateRobloxAuto()" 
+                            placeholder="ເຊັ່ນ: 100r, 500R, 15k, 15000..." 
+                            class="w-full p-3.5 bg-white border border-purple-200 rounded-2xl text-sm font-bold text-slate-800 outline-none">
+                        <div class="p-3 bg-white rounded-xl border border-purple-100 shadow-sm">
+                            <p id="robloxCalcResult" class="text-xs text-purple-700 font-bold">👉 ຜົນການຄິດໄລ່: 0 Robux = 0 ₭</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function calculateRobloxAuto() {
+            const input = document.getElementById('robloxInput').value;
+            const parsed = parseRobuxInput(input);
+            document.getElementById('robloxCalcResult').innerText = `👉 ຜົນການຄິດໄລ່: ${parsed.robux.toLocaleString()} Robux =${parsed.kip.toLocaleString()} ₭`;
+        }
+
+        async function buyGamePackage() {
+            let packageName = "";
+            let totalPrice = 0;
+            let targetDetails = "";
+
+            if (selectedGameId === 'freefire') {
+                const uid = document.getElementById('gameUID').value.trim();
+                if (!uid) return alert('❌ ກະລຸນາກອກ ID / UID ເກມກ່ອນ!');
+
+                const selectedRad = document.querySelector('input[name="selectedPkg"]:checked');
+                if (!selectedRad) return alert('❌ ກະລຸນາເລືອກແພັກເກັດ!');
+                const pkgIndex = parseInt(selectedRad.value);
+                const pkgObj = freeFirePackages[pkgIndex];
+
+                packageName = `Free Fire: ${pkgObj.name}`;
+                totalPrice = pkgObj.price;
+                targetDetails = `UID Free Fire: ${uid}`;
+            } 
+            else if (selectedGameId === 'roblox') {
+                const rUsername = document.getElementById('robloxUsername').value.trim();
+                if (!rUsername) return alert('❌ ກະລຸນາກອກ ຊື່/ID Roblox ກ່ອນ!');
+
+                const rInput = document.getElementById('robloxInput').value;
+                const parsed = parseRobuxInput(rInput);
+                if (parsed.kip <= 0 || parsed.robux <= 0) return alert('❌ ກະລຸນາກອກຈຳນວນ Robux ຫຼື ເງິນກີບໃຫ້ຖືກຕ້ອງ!');
+
+                packageName = `Roblox (${robloxType === 'group' ? 'ຜ່ານກຸ່ມ' : 'ຜ່ານ ID'}): ${parsed.robux.toLocaleString()} Robux`;
+                totalPrice = parsed.kip;
+                targetDetails = `ຊື່ Roblox: ${rUsername}`;
+            }
+
+            if (currentUser.balance < totalPrice) {
+                alert(`⛔ ເງິນໃນບັນຊີຂອງທ່ານບໍ່ພໍ!\n- ຍອດເງິນທີ່ມີ: ${currentUser.balance.toLocaleString()} ₭\n- ລາຄາອໍເດີ: ${totalPrice.toLocaleString()} ₭`);
+                return;
+            }
+
+            const isConfirm = confirm(`❓ ຢືນຢັນການສັ່ງຊື້:\n----------------------\n🎮 ເກມ: ${selectedGameId === 'freefire' ? 'Free Fire' : 'Roblox'}\n👤 ຂໍ້ມູນ: ${targetDetails}\n📦 ລາຍການ: ${packageName}\n💰 ລາຄາ: ${totalPrice.toLocaleString()} ₭\n----------------------\nກົດ "OK" ເພື່ອຢືນຢັນ`);
+            if (!isConfirm) return;
+
+            const newBal = currentUser.balance - totalPrice;
+            await db.from('users').update({ balance: newBal }).eq('id', currentUser.id);
+            await db.from('transactions').insert([{ username: currentUser.username, type: 'game', amount: totalPrice, status: 'pending', details: `ເຕີມ ${packageName} (${targetDetails})` }]);
+
+            // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອມີການສັ່ງຊື້ເຕີມເກມ
+            sendDiscordNotification(`🎮 **ອໍເດີເຕີມເກມໃໝ່**:\n- ຜູ້ໃຊ້: **${currentUser.username}**\n- ລາຍການ: ${packageName}\n- ລາຄາ: **${totalPrice.toLocaleString()} ₭**\n- ຂໍ້ມູນລູກຄ້າ: \`${targetDetails}\``);
+
+            currentUser.balance = newBal;
+            localStorage.setItem('app_user_session', JSON.stringify(currentUser));
+            alert('🎉 ສຳເລັດ! ສົ່ງອໍເດີເຕີມເກມແລ້ວ ກະລຸນາຖ້າ Admin ດຳເນີນການ.');
+            showUserUI();
+        }
+
+        async function submitCardTopUp() {
+            const cardType = document.getElementById('cardTypeSelect').value;
+            const cardPin = document.getElementById('inputCardPin').value.trim();
+
+            if (!cardPin) return alert('❌ ກະລຸນາກອກເລກບັດກ່ອນສົ່ງ!');
+            if (!/^\d+$/.test(cardPin)) return alert('❌ ເລກບັດຕ້ອງເປັນຕົວເລກເທົ່ານັ້ນ!');
+
+            const amt = cardType === '5' ? 8000 : 6800;
+
+            await db.from('transactions').insert([{ 
+                username: currentUser.username, 
+                type: `card_${cardType}`, 
+                amount: amt, 
+                status: 'pending', 
+                details: `ເຕີມບັດຫຼັກ ${cardType}`, 
+                code_info: cardPin 
+            }]);
+
+            // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອມີການເຕີມບັດ
+            sendDiscordNotification(`💳 **ອໍເດີເຕີມບັດຫຼັກ ${cardType}**\n- ຜູ້ໃຊ້: **${currentUser.username}**\n- ເລກບັດ: \`${cardPin}\`\n- ຈຳນວນເງິນ: **${amt.toLocaleString()} ₭**`);
+
+            document.getElementById('inputCardPin').value = '';
+            alert(`🎉 ສົ່ງເລກບັດ (${cardPin}) ສຳເລັດ!`);
+            loadTxHistory();
+        }
+
+        function generateRandomAccNo() {
+            const len = Math.floor(Math.random() * (20 - 8 + 1)) + 8;
+            let res = '';
+            for(let i=0; i<len; i++) res += Math.floor(Math.random() * 10);
+            return res;
+        }
+
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            document.getElementById('authTitle').innerText = isRegisterMode ? 'ສະໝັກສະມາຊິກ' : 'ເຂົ້າສູ່ລະບົບ';
+            document.getElementById('authSubmitBtn').innerText = isRegisterMode ? 'ສະໝັກສະມາຊິກ' : 'ເຂົ້າສູ່ລະບົບ';
+            document.getElementById('authToggleBtn').innerText = isRegisterMode ? 'ມີບັນຊີແລ້ວ? ເຂົ້າສູ່ລະບົບ' : 'ຍັງບໍ່ມີບັນຊີ? ສະໝັກສະມາຊິກ';
+        }
+
+        async function handleAuthSubmit() {
+            const u = document.getElementById('authUsername').value.trim();
+            const p = document.getElementById('authPassword').value.trim();
+            if(!u || !p) return alert('ກະລຸນາກອກຂໍ້ມູນໃຫ້ຄົບ!');
+
+            if (u === 'AdminJackkdorSan' && p === 'Admin522553Admin') {
+                alert('👑 ເຂົ້າສູ່ລະບົບ Admin ສຳເລັດ!');
+                currentUser = { username: u, role: 'admin' };
+                localStorage.setItem('app_user_session', JSON.stringify(currentUser));
+                showAdminUI();
+                return;
+            }
+
+            if(isRegisterMode) {
+                const acc = generateRandomAccNo();
+                const { data, error } = await db.from('users').insert([{ username: u, password: p, account_number: acc, balance: 0 }]).select();
+                if (error) alert('❌ ສະໝັກບໍ່ສຳເລັດ: ' + error.message);
+                else {
+                    alert('🎉 ສະໝັກສະມາຊິກສຳເລັດ!');
+                    currentUser = { ...data[0], role: 'user' };
+                    localStorage.setItem('app_user_session', JSON.stringify(currentUser));
+
+                    // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອມີສະມາຊິກໃໝ່
+                    sendDiscordNotification(`👤 **ມີສະມາຊິກໃໝ່ສະໝັກເຂົ້າໃຊ້ງານ**\n- ຊື່ຜູ້ໃຊ້: **${u}**\n- ເລກບັນຊີ: \`${acc}\``);
+
+                    checkBanAndLoad();
+                }
+            } else {
+                const { data, error } = await db.from('users').select('*').eq('username', u).eq('password', p);
+                if (error || !data || data.length === 0) alert('❌ ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານ ບໍ່ຖືກຕ້ອງ!');
+                else {
+                    currentUser = { ...data[0], role: 'user' };
+                    localStorage.setItem('app_user_session', JSON.stringify(currentUser));
+                    checkBanAndLoad();
+                }
+            }
+        }
+
+        async function checkBanAndLoad() {
+            const { data } = await db.from('users').select('*').eq('id', currentUser.id).single();
+            if (data && data.is_banned && data.banned_until) {
+                const remainSec = Math.ceil((new Date(data.banned_until) - new Date()) / 1000);
+                if (remainSec > 0) {
+                    document.body.innerHTML = `<div class="flex items-center justify-center min-h-screen bg-rose-950 text-white p-6 text-center"><div class="space-y-4 max-w-md bg-slate-900 p-8 rounded-3xl border border-rose-500/30"><h1 class="text-3xl font-extrabold text-rose-500">⛔ ເຈົ້າຖືກລະງັບບັນຊີ!</h1><p class="text-lg text-slate-300">ກະລຸນາຖ້າ: <span id="banTimer" class="font-bold text-amber-400 text-3xl font-mono">${remainSec}</span> ວິນາທີ</p></div></div>`;
+                    let sec = remainSec;
+                    const timer = setInterval(() => {
+                        sec--;
+                        const el = document.getElementById('banTimer');
+                        if(el) el.innerText = sec;
+                        if(sec <= 0) { clearInterval(timer); logout(); }
+                    }, 1000);
+                    return;
+                }
+            }
+            if(data) {
+                currentUser = { ...data, role: 'user' };
+                localStorage.setItem('app_user_session', JSON.stringify(currentUser));
+            }
+            showUserUI();
+        }
+
+        function showAdminUI() {
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementById('userContainer').classList.add('hidden');
+            document.getElementById('adminContainer').classList.remove('hidden');
+            setupRealtimeListeners();
+            loadAdminData();
+        }
+
+        function showUserUI() {
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementById('adminContainer').classList.add('hidden');
+            document.getElementById('userContainer').classList.remove('hidden');
+
+            document.getElementById('userGreeting').innerText = `ສະບາຍດີ! ${currentUser.username}`;
+            document.getElementById('userAccNo').innerText = `ເລກບັນຊີ: ${currentUser.account_number}`;
+            document.getElementById('userBalance').innerText = `${(currentUser.balance || 0).toLocaleString()} ₭`;
+
+            document.getElementById('userQRCode').innerHTML = '';
+            new QRCode(document.getElementById('userQRCode'), { text: currentUser.account_number, width: 45, height: 45 });
+            renderGameTabs();
+            setupRealtimeListeners();
+            loadTxHistory();
+        }
+
+        function switchTab(num) {
+            document.querySelectorAll('.tab-page').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab${num}`).classList.remove('hidden');
+        }
+
+        function showBigQrModal() {
+            document.getElementById('modalAccNo').innerText = `ເລກບັນຊີ: ${currentUser.account_number}`;
+            const container = document.getElementById('bigUserQRCode');
+            container.innerHTML = '';
+            new QRCode(container, { text: currentUser.account_number, width: 220, height: 220 });
+            document.getElementById('bigQrModal').classList.remove('hidden');
+            document.getElementById('bigQrModal').classList.add('flex');
+        }
+
+        function closeBigQrModal() {
+            document.getElementById('bigQrModal').classList.add('hidden');
+            document.getElementById('bigQrModal').classList.remove('flex');
+        }
+
+        async function showQRTransferModal() {
+            const { data } = await db.from('admin_settings').select('value').eq('key', 'qr_bank_url').single();
+            if(data && data.value) document.getElementById('adminQrDisplay').src = data.value;
+            document.getElementById('qrModal').classList.remove('hidden');
+            document.getElementById('qrModal').classList.add('flex');
+        }
+
+        function closeQRModal() {
+            document.getElementById('qrModal').classList.add('hidden');
+            document.getElementById('qrModal').classList.remove('flex');
+        }
+
+        async function submitQRTransfer() {
+            const rawAmt = document.getElementById('qrTransferAmount').value;
+            const amt = parseKipAmount(rawAmt);
+            if(!amt || amt <= 0) return alert('ກະລຸນາກອກຈຳນວນເງິນ!');
+            await db.from('transactions').insert([{ username: currentUser.username, type: 'qr_bank', amount: amt, status: 'pending', details: `ໂອນ Scan QR Bank` }]);
+            
+            // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອມີການໂອນ QR Bank
+            sendDiscordNotification(`📲 **ແຈ້ງໂອນ QR Bank**\n- ຊື່ບັນຊີ: **${currentUser.username}**\n- ຈຳນວນເງິນ: **${amt.toLocaleString()} ₭**`);
+            
+            closeQRModal();
+            alert('ແຈ້ງໂອນເງິນສຳເລັດ! ຖ້າ Admin ອະນຸມັດ.');
+            loadTxHistory();
+        }
+
+        async function redeemCodeAction() {
+            const codeInput = document.getElementById('inputRedeemCode').value.trim();
+            if(!codeInput) return alert('ກະລຸນາປ້ອນ ຫຼື ສະແກນລະຫັດໂຄ້ດ!');
+
+            const { data, error } = await db.from('promo_codes').select('*').eq('code', codeInput).single();
+            if (error || !data) return alert('❌ ບໍ່ພົບໂຄ້ດ/Barcode ນີ້ໃນລະບົບ!');
+
+            const maxUses = data.max_uses || 1;
+            const currentUses = data.current_uses || 0;
+            if (currentUses >= maxUses || data.is_used) return alert('❌ ໂຄ້ດນີ້ຖືກໃຊ້ງານຄົບຈຳນວນ/ໝົດແລ້ວ!');
+
+            const now = new Date();
+            if (data.start_date && new Date(data.start_date) > now) return alert('❌ ໂຄ້ດນີ້ຍັງບໍ່ເຖິງວັນສະແກນ!');
+            if (data.expire_date && new Date(data.expire_date) < now) return alert('❌ ໂຄ້ດນີ້ໝົດອາຍຸແລ້ວ!');
+
+            const newUses = currentUses + 1;
+            await db.from('promo_codes').update({ current_uses: newUses, is_used: newUses >= maxUses }).eq('id', data.id);
+
+            const newBal = currentUser.balance + data.amount;
+            await db.from('users').update({ balance: newBal }).eq('id', currentUser.id);
+            await db.from('transactions').insert([{ username: currentUser.username, type: 'redeem', amount: data.amount, status: 'success', details: `ແລກໂຄ້ດ: ${codeInput}` }]);
+
+            // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອແລກໂຄ້ດສຳເລັດ
+            sendDiscordNotification(`🎁 **ແລກໂຄ້ດ/Barcode ສຳເລັດ**\n- ຊື່ບັນຊີ: **${currentUser.username}**\n- ລະຫັດ: \`${codeInput}\`\n- ໄດ້ຮັບ: **+${data.amount.toLocaleString()} ₭**`);
+
+            currentUser.balance = newBal;
+            localStorage.setItem('app_user_session', JSON.stringify(currentUser));
+            playSound('money');
+            alert(`🎉 ສະແກນ/ແລກໂຄ້ດສຳເລັດ! ໄດ້ຮັບ +${data.amount.toLocaleString()} ₭`);
+            document.getElementById('inputRedeemCode').value = '';
+            showUserUI();
+        }
+
+        function toggleScanner() {
+            const readerDiv = document.getElementById('reader');
+            const btn = document.getElementById('scannerBtn');
+            if(!isScannerActive) {
+                readerDiv.classList.remove('hidden');
+                btn.innerText = "❌ ປິດກ້ອງສະແກນ";
+                isScannerActive = true;
+                html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+                html5QrcodeScanner.render((decodedText) => {
+                    document.getElementById('inputRedeemCode').value = decodedText;
+                    toggleScanner();
+                    redeemCodeAction();
+                });
+            } else {
+                if(html5QrcodeScanner) html5QrcodeScanner.clear();
+                readerDiv.classList.add('hidden');
+                btn.innerText = "📷 ເປີດກ້ອງສະແກນ QR";
+                isScannerActive = false;
+            }
+        }
+
+        function toggleAdminScanner() {
+            const readerDiv = document.getElementById('adminReader');
+            const btn = document.getElementById('adminScannerBtn');
+            if(!isAdminScannerActive) {
+                readerDiv.classList.remove('hidden');
+                btn.innerText = "❌ ປິດກ້ອງ";
+                isAdminScannerActive = true;
+                adminHtml5QrcodeScanner = new Html5QrcodeScanner("adminReader", { fps: 10, qrbox: 250 });
+                adminHtml5QrcodeScanner.render((decodedText) => {
+                    document.getElementById('adminTicketInput').value = decodedText;
+                    toggleAdminScanner();
+                    adminScanTicketAction();
+                });
+            } else {
+                if(adminHtml5QrcodeScanner) adminHtml5QrcodeScanner.clear();
+                readerDiv.classList.add('hidden');
+                btn.innerText = "📷 ເປີດກ້ອງສະແກນ";
+                isAdminScannerActive = false;
+            }
+        }
+
+        async function adminScanTicketAction() {
+            const ticketCode = document.getElementById('adminTicketInput').value.trim();
+            if(!ticketCode) return alert('ກະລຸນາປ້ອນ ຫຼື ສະແກນລະຫັດປີ້/ໂຄ້ດ!');
+
+            const { data, error } = await db.from('promo_codes').select('*').eq('code', ticketCode).single();
+            if (error || !data) return alert('❌ ບໍ່ພົບຂໍ້ມູນປີ້/ໂຄ້ດນີ້ໃນລະບົບ!');
+
+            const maxUses = data.max_uses || 1;
+            const currentUses = data.current_uses || 0;
+            if (currentUses >= maxUses || data.is_used) return alert(`❌ ປີ້/ໂຄ້ດນີ້ຖືກໃຊ້ງານແລ້ວ! (${currentUses}/${maxUses})`);
+
+            const now = new Date();
+            if (data.start_date && new Date(data.start_date) > now) return alert('❌ ປີ້/ໂຄ້ດນີ້ຍັງບໍ່ເຖິງກຳນົດເວລາໃຊ້ງານ!');
+            if (data.expire_date && new Date(data.expire_date) < now) return alert('❌ ປີ້/ໂຄ້ດນີ້ໝົດອາຍຸແລ້ວ!');
+
+            const isConfirm = confirm(`🎟️ ພົບຂໍ້ມູນປີ້/ໂຄ້ດ:\n- ລະຫັດ: ${data.code}\n- ມູນຄ່າ: ${data.amount.toLocaleString()} ₭\n- ຈຳນວນຄັ້ງທີ່ໃຊ້ໄດ້: ${currentUses}/${maxUses}\n\nກົດ "OK" ເພື່ອຢືນຢັນການແລກ/ຕັດປີ້ລູກຄ້າ`);
+            if(!isConfirm) return;
+
+            const newUses = currentUses + 1;
+            await db.from('promo_codes').update({ current_uses: newUses, is_used: newUses >= maxUses }).eq('id', data.id);
+
+            // 📣 ແຈ້ງເຕືອນລົງ Discord
+            sendDiscordNotification(`🎟️ **Admin ສະແກນປີ້/ໂຄ້ດໃຫ້ລູກຄ້າ**\n- ລະຫັດປີ້: \`${ticketCode}\`\n- ມູນຄ່າ: **${data.amount.toLocaleString()} ₭**\n- ສະຖານະ: ໃຊ້ງານແລ້ວ (${newUses}/${maxUses})`);
+
+            alert(`🎉 ສະແກນປີ້/ໂຄ້ດສຳເລັດ! (ມູນຄ່າ: ${data.amount.toLocaleString()} ₭)`);
+            document.getElementById('adminTicketInput').value = '';
+            loadAdminData();
+        }
+
+        async function transferMoney() {
+            const targetAcc = document.getElementById('transferTargetAcc').value.trim();
+            const amt = parseKipAmount(document.getElementById('transferAmount').value);
+            if(!targetAcc || !amt || amt <= 0) return alert('ກອກຂໍ້ມູນໃຫ້ຖືກຕ້ອງ!');
+            if (currentUser.balance < amt) return alert('❌ ຍອດເງິນບໍ່ພໍ!');
+
+            const { data: receiver } = await db.from('users').select('*').eq('account_number', targetAcc).single();
+            if (!receiver) return alert('❌ ບໍ່ພົບເລກບັນຊີຜູ້ຮັບ!');
+
+            const newSenderBal = currentUser.balance - amt;
+            await db.from('users').update({ balance: newSenderBal }).eq('id', currentUser.id);
+            await db.from('users').update({ balance: receiver.balance + amt }).eq('id', receiver.id);
+
+            await db.from('transactions').insert([{ username: currentUser.username, type: 'transfer_out', amount: amt, status: 'success', details: `ໂອນໃຫ້: ${receiver.username} (${targetAcc})` }]);
+            await db.from('transactions').insert([{ username: receiver.username, type: 'transfer_in', amount: amt, status: 'success', details: `ໄດ້ຮັບໂອນຈາກ: ${currentUser.username}` }]);
+
+            // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອມີການໂອນເງິນ
+            sendDiscordNotification(`💸 **ມີການໂອນເງິນລະຫວ່າງບັນຊີ**\n- ຜູ້ໂອນ: **${currentUser.username}**\n- ຜູ້ຮັບ: **${receiver.username}** (\`${targetAcc}\`)\n- ຈຳນວນເງິນ: **${amt.toLocaleString()} ₭**`);
+
+            currentUser.balance = newSenderBal;
+            localStorage.setItem('app_user_session', JSON.stringify(currentUser));
+            alert('💸 ໂອນເງິນສຳເລັດ!');
+            showUserUI();
+        }
+
+        async function changePasswordPrompt() {
+            const newPw = prompt("ປ້ອນລະຫັດຜ່ານໃໝ່:");
+            if(newPw) {
+                await db.from('users').update({ password: newPw }).eq('id', currentUser.id);
+                alert('🔑 ປ່ຽນລະຫັດຜ່ານສຳເລັດ!');
+            }
+        }
+
+        async function deleteAccountPrompt() {
+            if(confirm("⚠️ ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບບັນຊີ?")) {
+                await db.from('users').delete().eq('id', currentUser.id);
+                alert('ລຶບບັນຊີສຳເລັດ!');
+                logout();
+            }
+        }
+
+        async function loadTxHistory() {
+            const { data } = await db.from('transactions').select('*').eq('username', currentUser.username).order('created_at', { ascending: false });
+            const container = document.getElementById('txHistoryList');
+            if(!data || data.length === 0) return container.innerHTML = `<p class="text-center text-sm text-slate-400 py-8">ບໍ່ມີປະຫວັດທຸລະກຳ</p>`;
+            container.innerHTML = data.map(t => {
+                const color = t.status === 'success' ? 'text-emerald-600' : (t.status === 'pending' ? 'text-amber-500' : 'text-rose-500');
+                return `
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center text-sm">
+                    <div>
+                        <p class="font-bold text-slate-800">${t.details}</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">${new Date(t.created_at).toLocaleString()}</p>
+                    </div>
+                    <span class="font-extrabold ${color}">${t.amount ? t.amount.toLocaleString()+' ₭' : '-'} <span class="text-[10px] uppercase block text-right font-normal text-slate-400">(${t.status})</span></span>
+                </div>`;
+            }).join('');
+        }
+
+        async function loadAdminData() {
+            const { data: pendingTx } = await db.from('transactions').select('*').eq('status', 'pending');
+            const pendingContainer = document.getElementById('adminPendingTxList');
+            if(!pendingTx || pendingTx.length === 0) pendingContainer.innerHTML = `<p class="text-slate-500 text-sm py-2">ບໍ່ມີລາຍການລໍຖ້າ</p>`;
+            else {
+                pendingContainer.innerHTML = pendingTx.map(t => `
+                    <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
+                        <div>
+                            <p class="font-bold text-amber-400 text-sm">${t.username} <span class="text-slate-400 font-normal">| ${t.details}</span></p>
+                            <p class="text-slate-300 mt-1">ຈຳນວນ: <span class="font-bold text-emerald-400">${t.amount.toLocaleString()} ₭</span> ${t.code_info ? '| ລະຫັດບັດ: <span class="font-mono bg-slate-900 px-2 py-0.5 rounded text-amber-300">'+t.code_info+'</span>' : ''}</p>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <button onclick="adminApproveTx('${t.id}', '${t.username}', ${t.amount}, true, '${t.type}')" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-xl text-white font-bold transition">✔️ ສຳເລັດ</button>
+                            <button onclick="adminApproveTx('${t.id}', '${t.username}', ${t.amount}, false, '${t.type}')" class="flex-1 sm:flex-none bg-rose-600 hover:bg-rose-500 px-4 py-2 rounded-xl text-white font-bold transition">❌ ບໍ່ສຳເລັດ</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            const { data: users } = await db.from('users').select('*');
+            const tbody = document.getElementById('adminUserTableBody');
+            if(users) {
+                tbody.innerHTML = users.map(u => `
+                    <tr class="hover:bg-slate-800/50 transition">
+                        <td class="p-4 font-bold text-white">${u.username}</td>
+                        <td class="p-4 font-mono text-xs text-amber-400 font-bold">${u.password || '-'}</td>
+                        <td class="p-4 font-mono text-xs text-slate-400">${u.account_number}</td>
+                        <td class="p-4 text-emerald-400 font-bold">${u.balance.toLocaleString()} ₭</td>
+                        <td class="p-4">${u.is_banned ? '<span class="text-rose-400 font-bold text-xs bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20">⛔ ຖືກລະງັບ</span>' : '<span class="text-emerald-400 font-bold text-xs bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">✅ ປົກກະຕິ</span>'}</td>
+                        <td class="p-4 text-center space-x-1">
+                            <button onclick="adminQuickBan('${u.id}')" class="bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-white border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition">⛔ ລະງັບ</button>
+                            <button onclick="adminDeleteUser('${u.id}', '${u.username}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition">❌ ລຶບ</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            const { data: promoCodes } = await db.from('promo_codes').select('*').order('created_at', { ascending: false });
+            const ticketTbody = document.getElementById('adminTicketTableBody');
+            if (promoCodes && promoCodes.length > 0) {
+                ticketTbody.innerHTML = promoCodes.map(c => `
+                    <tr class="hover:bg-slate-800/50 transition border-b border-slate-800/50">
+                        <td class="p-4 font-mono text-xs font-bold text-amber-400">${c.code}</td>
+                        <td class="p-4 font-bold text-emerald-400">${c.amount.toLocaleString()} ₭</td>
+                        <td class="p-4 text-xs font-bold text-slate-300">${c.current_uses} / ${c.max_uses >= 99999 ? '∞' : c.max_uses}</td>
+                        <td class="p-4 text-xs">
+                            ${(c.is_used || c.current_uses >= c.max_uses) 
+                                ? '<span class="text-rose-400 font-bold bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20">❌ ໃຊ້ໝົດແລ້ວ</span>' 
+                                : '<span class="text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">✅ ພ້ອມໃຊ້ງານ</span>'}
+                        </td>
+                        <td class="p-4 text-center space-x-1">
+                            <button onclick="adminShowPopupForCode('${c.code}', ${c.amount}, ${c.max_uses})" class="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition">🖼️ ເບິ່ງ/ດາວໂຫຼດ</button>
+                            <button onclick="adminDeleteTicket('${c.id}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition">❌ ລຶບ</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                ticketTbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">ບໍ່ທັນມີປີ້ໃນລະບົບ</td></tr>`;
+            }
+        }
+
+        function adminShowPopupForCode(code, amount, maxUses) {
+            activeGeneratedCode = code;
+            let conditionText = maxUses >= 99999 ? 'ໃຊ້ໄດ້ເລື້ອຍໆ (Unlimited)' : `ໃຊ້ໄດ້ ${maxUses} ເທື່ອ`;
+            renderCanvasTicket('popupTicketCanvas', {
+                amount, code, conditionText, dateText: 'ໃຊ້ໄດ້ຕະຫຼອດໄປ', hideMode: 'blur', themeKey: 'whiteGold', patternKey: 'waves'
+            });
+            const modal = document.getElementById('ticketShareModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        async function adminDeleteTicket(ticketId) {
+            if(!confirm("⚠️ ແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບປີ້/ໂຄ້ດນີ້?")) return;
+            await db.from('promo_codes').delete().eq('id', ticketId);
+            alert('🗑️ ລຶບປີ້/ໂຄ້ດສຳເລັດ!');
+            loadAdminData();
+        }
+
+        async function adminAdjustBalance(action) {
+            const uName = document.getElementById('adminUserTarget').value.trim();
+            const amt = parseKipAmount(document.getElementById('adminAmount').value);
+            const { data: u } = await db.from('users').select('*').eq('username', uName).single();
+            if(!u || !amt) return alert('ບໍ່ພົບຜູ້ໃຊ້ ຫຼື ຈຳນວນເງິນບໍ່ຖືກ!');
+
+            const newBal = action === 'add' ? u.balance + amt : Math.max(0, u.balance - amt);
+            await db.from('users').update({ balance: newBal }).eq('id', u.id);
+
+            // 📣 ແຈ້ງເຕືອນລົງ Discord
+            sendDiscordNotification(`👑 **Admin ${action === 'add' ? 'ເພີ່ມເງິນ' : 'ລຶບເງິນ'}**\n- ຜູ້ໃຊ້: **${uName}**\n- ຈຳນວນ: **${amt.toLocaleString()} ₭**\n- ຍອດເງິນໃໝ່: **${newBal.toLocaleString()} ₭**`);
+
+            alert(`ປັບເງິນສຳເລັດ! ຍອດເງິນໃໝ່: ${newBal.toLocaleString()} ₭`);
+            loadAdminData();
+        }
+
+        function uploadAdminQrImage() {
+            const fileInput = document.getElementById('adminQrFileInput');
+            if (!fileInput.files || !fileInput.files[0]) return alert('ກະລຸນາເລືອກຮູບ!');
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                await db.from('admin_settings').upsert({ key: 'qr_bank_url', value: e.target.result });
+                alert('💾 ບັນທຶກຮູບ QR Bank ສຳເລັດ!');
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+
+        async function adminApproveTx(txId, username, amount, isSuccess, txType) {
+            const status = isSuccess ? 'success' : 'failed';
+            await db.from('transactions').update({ status }).eq('id', txId);
+
+            if(isSuccess && txType && txType.includes('card')) {
+                const { data: u } = await db.from('users').select('*').eq('username', username).single();
+                if(u) await db.from('users').update({ balance: u.balance + amount }).eq('id', u.id);
+            }
+
+            // 📣 ແຈ້ງເຕືອນລົງ Discord
+            sendDiscordNotification(`📢 **ອັບເດດສະຖານະອໍເດີ**\n- ຜູ້ໃຊ້: **${username}**\n- ສະຖານະ: **${status === 'success' ? '✅ ສຳເລັດ (SUCCESS)' : '❌ ບໍ່ສຳເລັດ (FAILED)'}**`);
+
+            alert(`ເຮັດລາຍການ (${status}) ສຳເລັດ!`);
+            loadAdminData();
+        }
+
+        async function adminQuickBan(userId) {
+            const secStr = prompt("ປ້ອນຈຳນວນເວລາລະງັບ (ເຊັ່ນ: 60s, 10m, 2h):", "60");
+            if(!secStr) return;
+            let totalSec = parseInt(secStr) || 0;
+            if(secStr.endsWith('m')) totalSec = parseInt(secStr) * 60;
+            if(secStr.endsWith('h')) totalSec = parseInt(secStr) * 3600;
+
+            const bannedUntil = new Date(Date.now() + totalSec * 1000).toISOString();
+            await db.from('users').update({ is_banned: true, banned_until: bannedUntil }).eq('id', userId);
+            alert('⛔ ລະງັບບັນຊີສຳເລັດ!');
+            loadAdminData();
+        }
+
+        async function adminDeleteUser(userId, username) {
+            const confirmDelete = confirm(`⚠️ ແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບບັນຊີ "${username}" ທິ້ງ?`);
+            if (!confirmDelete) return;
+
+            const { error } = await db.from('users').delete().eq('id', userId);
+            if (error) {
+                alert('❌ ບໍ່ສາມາດລຶບບັນຊີໄດ້: ' + error.message);
+            } else {
+                alert(`🗑️ ລຶບບັນຊີ ${username} ຢ່າງຖາວອນສຳເລັດ!`);
+                loadAdminData();
+            }
+        }
+
+        function logout() { 
+            if (userRealtimeChannel) db.removeChannel(userRealtimeChannel);
+            if (adminRealtimeChannel) db.removeChannel(adminRealtimeChannel);
+            localStorage.removeItem('app_user_session');
+            location.reload(); 
+        }
+    </script>
+</body>
+</html>
