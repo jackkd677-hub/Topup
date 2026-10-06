@@ -95,9 +95,9 @@
                 <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ເລືອກເກມທີ່ຕ້ອງການເຕີມ:</label>
-                        <div id="gameTabButtons" class="flex gap-2"></div>
+                        <div id="userGameTabs" class="flex gap-2 overflow-x-auto pb-1"></div>
                     </div>
-                    <div id="gameContentArea"></div>
+                    <div id="userGameContent"></div>
                     <button onclick="buyGamePackage()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl shadow-lg transition text-sm">
                         🛒 ຊື້ເລີຍ
                     </button>
@@ -200,7 +200,7 @@
         </div>
     </div>
 
-    <!-- ================= ADMIN DASHBOARD ================= -->
+    <!-- ADMIN DASHBOARD -->
     <div id="adminContainer" class="hidden min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
         <div class="max-w-7xl mx-auto space-y-6">
             <div class="flex justify-between items-center border-b border-slate-800 pb-5">
@@ -208,13 +208,118 @@
                     <span class="p-2 bg-rose-500/10 text-rose-500 rounded-xl text-2xl border border-rose-500/20">👑</span>
                     <div>
                         <h1 class="text-2xl font-extrabold text-white tracking-tight">Admin Dashboard</h1>
-                        <p class="text-xs text-slate-400">ລະບົບຈັດການຫຼັງບ້ານ ແລະ ສ້າງ/ຈັດການປີ້ (Admin Only)</p>
+                        <p class="text-xs text-slate-400">ລະບົບຈັດການຫຼັງບ້ານ, ເຕີມເກມ/ເຣດ/ແພັກເກັດ & VIP Ticket</p>
                     </div>
                 </div>
                 <button onclick="logout()" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 px-5 py-2.5 rounded-2xl text-xs font-bold transition">ອອກຈາກລະບົບ</button>
             </div>
 
-            <!-- 🔥 White Luxury Ticket Creator 🔥 -->
+            <!-- 🔥🔥🔥 1. 🔥🔥🔥 ລະບົບເພີ່ມ/ແກ້ໄຂ/ລົບ ເກມ, ແພັກເກັດ & ເຣດ (Dynamic Game Manager) -->
+            <div class="bg-slate-900 p-6 rounded-3xl border border-purple-500/30 shadow-2xl space-y-6">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 bg-purple-500/10 rounded-2xl text-purple-400 border border-purple-500/20 text-xl">🎮</div>
+                        <div>
+                            <h3 class="text-xl font-bold text-purple-400">🎮 ລະບົບເພີ່ມ & ຈັດການລາຍການເກມ, ແພັກເກັດ, ເຣດ</h3>
+                            <p class="text-xs text-slate-400">ເພີ່ມເກມໃໝ່, ເລືອກປະເພດ, ຕັ້ງຊ່ອງກອກຂອງລູກຄ້າ, ປັບປຸງ ແລະ ລົບໄດ້ອິດສະລະ</p>
+                        </div>
+                    </div>
+                    <button id="cancelEditGameBtn" onclick="resetGameForm()" class="hidden bg-slate-800 text-slate-300 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700">❌ ຍົກເລີກການແກ້ໄຂ</button>
+                </div>
+
+                <input type="hidden" id="editingGameId" value="">
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-950 p-5 rounded-2xl border border-slate-800 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-300 mb-1">🎮 ຊື່ເກມ / ຊື່ລາຍການ:</label>
+                        <input type="text" id="gmName" placeholder="ເຊັ່ນ: Free Fire, Roblox, RoV..." class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-purple-400 font-bold">
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-300 mb-1">💎 ສະກຸນເງິນເກມ:</label>
+                        <input type="text" id="gmCurrency" placeholder="ເຊັ່ນ: 💎, Robux, ໂລ, UC, CP..." value="💎" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-purple-400 font-bold">
+                        <p class="text-[10px] text-slate-500 mt-1">* ຈະສະແດງຕາມຫຼັງຈຳນວນເກມ ເຊັ່ນ: 1,000 ໂລ 1,000 ກີບ</p>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-300 mb-1">🔄 ປະເພດລາຍການ (ແພັກເກັດ/ເຣດ):</label>
+                        <select id="gmType" onchange="toggleGameTypeUI()" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white font-bold outline-none focus:border-purple-400">
+                            <option value="package">📦 ເລືອກແພັກເກັດ (Package List)</option>
+                            <option value="rate">📈 ເຣດຄິດໄລ່ເງິນ (Rate Mode)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ໂໝດ ເຣດ (Rate UI) -->
+                <div id="rateUIBox" class="hidden bg-purple-950/30 p-5 rounded-2xl border border-purple-500/20 space-y-3 text-xs">
+                    <label class="block font-bold text-purple-300">📈 ກອກເລກເຣດ (Rate Value):</label>
+                    <input type="number" id="gmRateValue" placeholder="ເຊັ່ນ: 150 (1 Robux = 150 ກີບ)" value="150" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-amber-400 font-bold text-sm outline-none">
+                    <div class="p-3 bg-slate-900/90 rounded-xl border border-purple-500/30 text-slate-300 space-y-1">
+                        <p class="font-bold text-amber-400">📐 ສູດຄິດໄລ່ທີ່ລະບົບຈະໃຊ້:</p>
+                        <p>1. ຖ້າປ້ອນເງິນກີບ: <span class="text-emerald-400 font-mono">ເງິນກີບ ÷ ເຣດ = ສະກຸນເງິນເກມ</span></p>
+                        <p>2. ຖ້າປ້ອນສະກຸນເງິນເກມ: <span class="text-emerald-400 font-mono">ສະກຸນເງິນເກມ × ເຣດ = ເງິນກີບ</span></p>
+                    </div>
+                </div>
+
+                <!-- 🔥✨ ໃຫມ່! ລະບົບຕັ້ງຊ່ອງກອກຂອງລູກຄ້າ (+ / -) 🔥✨ -->
+                <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3 text-xs">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <label class="block font-bold text-indigo-400">📝 ລູກຄ້າຕ້ອງກອກຫຍັງ (Custom User Inputs):</label>
+                            <p class="text-[10px] text-slate-400">* ຖ້າບໍ່ກອກ/ບໍ່ເພີ່ມ ເວລາລູກຄ້າສັ່ງຊື້ຈະບໍ່ມີຊ່ອງໃຫ້ກອກຂໍ້ມູນ</p>
+                        </div>
+                        <button type="button" onclick="addCustomInputRow()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1">
+                            <span>+ ເພີ່ມຊ່ອງກອກ</span>
+                        </button>
+                    </div>
+                    <div id="userInputContainer" class="space-y-2">
+                        <!-- Dynamic Custom Inputs Rows -->
+                    </div>
+                </div>
+
+                <!-- ໂໝດ ແພັກເກັດ (Package List UI) -->
+                <div id="packageUIBox" class="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3 text-xs">
+                    <div class="flex justify-between items-center">
+                        <label class="block font-bold text-emerald-400">📦 ລາຍການແພັກເກັດ (ກົດ + ເພື່ອເພີ່ມ, - ເພື່ອລົບ):</label>
+                        <button type="button" onclick="addPackageInputRow()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1">
+                            <span>+ ເພີ່ມແພັກເກັດ</span>
+                        </button>
+                    </div>
+
+                    <div id="packageInputContainer" class="space-y-2">
+                        <!-- Dynamic Package Rows -->
+                    </div>
+                </div>
+
+                <button onclick="saveGameConfigAction()" class="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3.5 rounded-2xl shadow-xl transition text-sm flex justify-center items-center gap-2">
+                    <i data-lucide="save" class="w-5 h-5"></i>
+                    <span id="saveGameBtnText">💾 ບັນທຶກ & ເພີ່ມເກມເຣັດຮຽບຮ້ອຍ</span>
+                </button>
+
+                <!-- ຕາຕະລາງເກມທັງໝົດ -->
+                <div class="space-y-3 pt-2">
+                    <h4 class="font-bold text-slate-300 text-sm">📋 ລາຍຊື່ເກມ & ແພັກເກັດ ທີ່ຕັ້ງໄວ້ທັງໝົດ</h4>
+                    <div class="overflow-x-auto rounded-2xl border border-slate-800">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-800/80 text-slate-200">
+                                <tr>
+                                    <th class="p-3">ຊື່ເກມ</th>
+                                    <th class="p-3">ສະກຸນເງິນ</th>
+                                    <th class="p-3">ປະເພດ</th>
+                                    <th class="p-3">ຊ່ອງກອກລູກຄ້າ</th>
+                                    <th class="p-3">ລາຍລະອຽດ/ແພັກເກັດ/ເຣດ</th>
+                                    <th class="p-3 text-center">ຈັດການ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminGameTableBody" class="divide-y divide-slate-800">
+                                <tr><td colspan="6" class="p-3 text-center text-slate-500">ກຳລັງໂຫຼດ...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- White Luxury Ticket Creator -->
             <div class="bg-gray-900 p-6 rounded-3xl text-white max-w-full mx-auto shadow-2xl border border-amber-500/20 space-y-6">
                 <div class="flex items-center gap-3 border-b border-gray-800 pb-4">
                     <div class="p-2.5 bg-amber-500/10 rounded-2xl border border-amber-500/30 text-amber-400">
@@ -226,7 +331,6 @@
                     </div>
                 </div>
 
-                <!-- 1. ຟອມກອກຂໍ້ມູນ ແລະ ຕັ້ງຄ່າປີ້ -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-950 p-5 rounded-2xl border border-gray-800 text-xs">
                     <div>
                         <label class="block font-bold text-gray-300 mb-1">💰 ມູນຄ່າປີ້ (ກີບ):</label>
@@ -293,7 +397,7 @@
                     <span>ກົດເພື່ອສ້າງປີ້ອັດຕະໂນມັດ, ບັນທຶກສະສົມ ແລະ ເບິ່ງ Popup Share</span>
                 </button>
 
-                <!-- ສ່ວນສະແກນປີ້ Admin -->
+                <!-- ສະແກນປີ້ Admin -->
                 <div class="bg-gray-950 p-5 rounded-2xl border border-gray-800 space-y-3">
                     <h4 class="font-bold text-emerald-400 text-sm flex items-center gap-2">
                         <span>🔍</span> ສະແກນ & ແລກປີ້ໃຫ້ລູກຄ້າ
@@ -307,7 +411,7 @@
                 </div>
             </div>
 
-            <!-- 🔥 ຕາຕະລາງສະສົມປີ້ທັງໝົດ 🔥 -->
+            <!-- ຕາຕະລາງສະສົມປີ້ -->
             <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4">
                 <h3 class="text-lg font-bold text-amber-400 flex items-center gap-2">
                     <span>🎟️</span> ປະຫວັດ ແລະ ລາຍຊື່ປີ້ທີ່ສ້າງໄວ້ທັງໝົດ (Accumulated Tickets)
@@ -379,7 +483,7 @@
         </div>
     </div>
 
-    <!-- Modal Popup ປີ້ແລກປ່ຽນ Share & Download -->
+    <!-- Modal Popup ປີ້ Share & Download -->
     <div id="ticketShareModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden items-center justify-center p-4 z-50 transition-all duration-300">
         <div class="bg-gray-900 border border-amber-500/30 p-6 rounded-3xl max-w-lg w-full text-center space-y-5 shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-gray-800 pb-3">
@@ -414,12 +518,10 @@
     </div>
 
     <script>
+        // ⚠️ ໃສ່ຂໍ້ມູນ SUPABASE ແລະ DISCORD WEBHOOK ຂອງທ່ານຢູ່ບ່ອນນີ້:
         const SUPABASE_URL = 'https://vlryowpyjshpxmlarzql.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_DnqcHhHr6kawEAVIA3avMA_zeAz7FoZ';
-        
-        // ⚠️ ໃສ່ DISCORD WEBHOOK URL ຂອງເຈົ້າຢູ່ບ່ອນນີ້:
         const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1550155876914958509/VzIEiLvBryv8ftFq8I0U-BW71k7Occxt434dDkWckH64jy9lwvVuNmZjMzBYe7cQc_Cr';
-        const ROBLOX_GROUP_URL = 'https://www.roblox.com/share/g/177046894'; 
 
         const { createClient } = supabase;
         const db = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -436,8 +538,10 @@
         let userRealtimeChannel = null;
         let adminRealtimeChannel = null;
 
-        const ROBUX_RATE = 150; 
-        let robloxType = 'group'; 
+        // Dynamic loaded games
+        let loadedGamesList = [];
+        let selectedGameObj = null;
+        let selectedPkgIndex = 0;
 
         const WHITE_THEMES = {
             whiteGold: { bg1: '#ffffff', bg2: '#fcfbf7', border: '#d97706', borderLight: '#fef3c7', textHeader: '#b45309', textPrice: '#059669', badgeBg: '#fffbeb', badgeBorder: '#fcd34d', badgeText: '#92400e' },
@@ -448,57 +552,15 @@
 
         let activeGeneratedCode = '';
 
-        let freeFirePackages = [
-            { name: "33 💎", price: 10000 },
-            { name: "68 💎", price: 17000 },
-            { name: "172 💎", price: 37000 },
-            { name: "310 💎", price: 63000 },
-            { name: "517 💎", price: 103000 },
-            { name: "690 💎", price: 137000 },
-            { name: "1,052 💎", price: 200000 },
-            { name: "1,801 💎", price: 337000 },
-            { name: "3,698 💎", price: 662000 },
-            { name: "ເຕີມໂຕເລເວວ 6", price: 10000 },
-            { name: "ເຕີມໂຕເລເວວ 10", price: 15000 },
-            { name: "ເຕີມໂຕເລເວວ 15", price: 15000 },
-            { name: "ເຕີມໂຕເລເວວ 20", price: 15000 },
-            { name: "ເຕີມໂຕເລເວວ 25", price: 15000 },
-            { name: "ເຕີມໂຕເລເວວ 30", price: 19000 },
-            { name: "ບັດລາຍອາທິດ", price: 47000 },
-            { name: "ບັດລາຍເດືອນ", price: 202000 },
-            { name: "ບັດລາຍອາທິດມິນິ", price: 26000 },
-            { name: "BP Card (BOOYAH PASS CARD)", price: 63000 }
-        ];
-
-        let gameList = [
-            { id: 'freefire', name: '🔥 Free Fire' },
-            { id: 'roblox', name: '🧱 Roblox' }
-        ];
-
-        let selectedGameId = 'freefire';
-
-        // 🔥 ຟັງຊັນສົ່ງແຈ້ງເຕືອນ Discord ທີ່ແກ້ໄຂແລ້ວ
         async function sendDiscordNotification(content) {
-            if (!DISCORD_WEBHOOK_URL || DISCORD_WEBHOOK_URL.includes('YOUR_DISCORD') || DISCORD_WEBHOOK_URL === '') {
-                console.log('⚠️ ບໍ່ໄດ້ກຳນົດ Discord Webhook URL ຫຼື ເປັນຄ່າ Default');
-                return;
-            }
+            if (!DISCORD_WEBHOOK_URL || DISCORD_WEBHOOK_URL.includes('YOUR_DISCORD') || DISCORD_WEBHOOK_URL === '') return;
             try {
-                const response = await fetch(DISCORD_WEBHOOK_URL, {
+                await fetch(DISCORD_WEBHOOK_URL, {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json' 
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content: content })
                 });
-                if (!response.ok) {
-                    console.error('❌ ສົ່ງ Discord Webhook ບໍ່ສຳເລັດ:', response.statusText);
-                } else {
-                    console.log('✅ ສົ່ງແຈ້ງເຕືອນລົງ Discord ສຳເລັດ!');
-                }
-            } catch (err) {
-                console.error('❌ ເກີດຂໍ້ຜິດພາດໃນການສົ່ງ Discord Webhook:', err);
-            }
+            } catch (err) { console.error('Discord error:', err); }
         }
 
         function playSound(type) {
@@ -526,9 +588,7 @@
                     osc.start(ctx.currentTime);
                     osc.stop(ctx.currentTime + 0.3);
                 }
-            } catch (e) {
-                console.log('Sound play error:', e);
-            }
+            } catch (e) {}
         }
 
         function setupRealtimeListeners() {
@@ -539,58 +599,33 @@
 
             if (currentUser.role === 'user') {
                 userRealtimeChannel = db.channel(`user-realtime-${currentUser.id}`)
-                    .on(
-                        'postgres_changes',
-                        { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${currentUser.id}` },
-                        (payload) => {
-                            const newUserData = payload.new;
-                            if (newUserData.balance > currentUser.balance) {
-                                playSound('money');
-                            }
-                            currentUser = { ...currentUser, ...newUserData };
-                            localStorage.setItem('app_user_session', JSON.stringify(currentUser));
-                            
-                            if (newUserData.is_banned) {
-                                checkBanAndLoad();
-                            } else {
-                                const balEl = document.getElementById('userBalance');
-                                if (balEl) balEl.innerText = `${(currentUser.balance || 0).toLocaleString()} ₭`;
-                            }
+                    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${currentUser.id}` }, (payload) => {
+                        const newUserData = payload.new;
+                        if (newUserData.balance > currentUser.balance) playSound('money');
+                        currentUser = { ...currentUser, ...newUserData };
+                        localStorage.setItem('app_user_session', JSON.stringify(currentUser));
+                        
+                        if (newUserData.is_banned) {
+                            checkBanAndLoad();
+                        } else {
+                            const balEl = document.getElementById('userBalance');
+                            if (balEl) balEl.innerText = `${(currentUser.balance || 0).toLocaleString()} ₭`;
                         }
-                    )
-                    .on(
-                        'postgres_changes',
-                        { event: '*', schema: 'public', table: 'transactions', filter: `username=eq.${currentUser.username}` },
-                        () => {
-                            playSound('notify');
-                            loadTxHistory();
-                        }
-                    )
+                    })
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `username=eq.${currentUser.username}` }, () => {
+                        playSound('notify');
+                        loadTxHistory();
+                    })
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, () => {
+                        loadDynamicGamesUser();
+                    })
                     .subscribe();
             } else if (currentUser.role === 'admin') {
                 adminRealtimeChannel = db.channel('admin-realtime-all')
-                    .on(
-                        'postgres_changes',
-                        { event: '*', schema: 'public', table: 'transactions' },
-                        () => {
-                            playSound('notify');
-                            loadAdminData();
-                        }
-                    )
-                    .on(
-                        'postgres_changes',
-                        { event: '*', schema: 'public', table: 'users' },
-                        () => {
-                            loadAdminData();
-                        }
-                    )
-                    .on(
-                        'postgres_changes',
-                        { event: '*', schema: 'public', table: 'promo_codes' },
-                        () => {
-                            loadAdminData();
-                        }
-                    )
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => { playSound('notify'); loadAdminData(); })
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => loadAdminData())
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'promo_codes' }, () => loadAdminData())
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, () => loadAdminData())
                     .subscribe();
             }
         }
@@ -598,6 +633,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             toggleLimitInput();
+            addPackageInputRow(); 
 
             const savedSession = localStorage.getItem('app_user_session');
             if (savedSession) {
@@ -625,19 +661,384 @@
             return isK ? num * 1000 : num;
         }
 
-        function parseRobuxInput(input) {
-            if(!input) return { robux: 0, kip: 0 };
-            let str = input.toString().trim().toLowerCase();
-            if (str.match(/r|robux|ໂລບັກ|ໂຣບັກ/)) {
-                let rVal = parseFloat(str.replace(/r|robux|ໂລບັກ|ໂຣບັກ|\s|,/g, '')) || 0;
-                let kVal = Math.ceil(rVal * ROBUX_RATE);
-                return { robux: rVal, kip: kVal };
+        // ====================================================
+        // 🔥🔥🔥 1. ຟັງຊັນຈັດການແພັກເກັດ, ເຣດ & ຊ່ອງກອກລູກຄ້າ (ADMIN) 🔥🔥🔥
+        // ====================================================
+
+        function toggleGameTypeUI() {
+            const type = document.getElementById('gmType').value;
+            const rateBox = document.getElementById('rateUIBox');
+            const pkgBox = document.getElementById('packageUIBox');
+
+            if (type === 'rate') {
+                rateBox.classList.remove('hidden');
+                pkgBox.classList.add('hidden');
             } else {
-                let kVal = parseKipAmount(str);
-                let rVal = Math.floor(kVal / ROBUX_RATE);
-                return { robux: rVal, kip: kVal };
+                rateBox.classList.add('hidden');
+                pkgBox.classList.remove('hidden');
             }
         }
+
+        // ➕ ຟັງຊັນເພີ່ມ/ລົບ ຊ່ອງກອກຂອງລູກຄ້າ
+        function addCustomInputRow(inputData = { label: '', placeholder: '' }) {
+            const container = document.getElementById('userInputContainer');
+            const rowId = 'uinput_row_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+
+            const rowHtml = `
+                <div id="${rowId}" class="flex gap-2 items-center bg-slate-900 p-2 rounded-xl border border-slate-800">
+                    <input type="text" placeholder="[ ຂໍ້ຄວາມ/Label ເຊັ່ນ: ID ເກມ ]" value="${inputData.label || ''}" class="uinput-label flex-1 p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-bold text-xs outline-none focus:border-indigo-400">
+                    <input type="text" placeholder="[ ລາຍລະອຽດ/Placeholder (ບໍ່ກອກກໍໄດ້) ]" value="${inputData.placeholder || ''}" class="uinput-placeholder flex-1 p-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-300 text-xs outline-none focus:border-indigo-400">
+                    <button type="button" onclick="removeCustomInputRow('${rowId}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white p-2 rounded-lg font-bold text-xs transition border border-rose-500/30 whitespace-nowrap">
+                        ➖ ລົບ
+                    </button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', rowHtml);
+        }
+
+        function removeCustomInputRow(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) row.remove();
+        }
+
+        // ➕ ຟັງຊັນເພີ່ມ/ລົບ ແພັກເກັດ
+        function addPackageInputRow(pkgData = { name: '', price: '', desc: '' }) {
+            const container = document.getElementById('packageInputContainer');
+            const rowId = 'pkg_row_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+
+            const rowHtml = `
+                <div id="${rowId}" class="flex gap-2 items-center bg-slate-900 p-2 rounded-xl border border-slate-800">
+                    <input type="text" placeholder="[ ແພັກເກັດ / ຈຳນວນ ]" value="${pkgData.name || ''}" class="pkg-input-name flex-1 p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-bold text-xs outline-none focus:border-emerald-400">
+                    <input type="number" placeholder="[ ລາຄາ (ກີບ) ]" value="${pkgData.price || ''}" class="pkg-input-price w-28 p-2 bg-slate-950 border border-slate-700 rounded-lg text-emerald-400 font-bold text-xs outline-none focus:border-emerald-400">
+                    <input type="text" placeholder="[ ລາຍລະອຽດ (ບໍ່ກອກກໍໄດ້) ]" value="${pkgData.desc || ''}" class="pkg-input-desc flex-1 p-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-300 text-xs outline-none focus:border-emerald-400">
+                    <button type="button" onclick="removePackageInputRow('${rowId}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white p-2 rounded-lg font-bold text-xs transition border border-rose-500/30 whitespace-nowrap">
+                        ➖ ລົບ
+                    </button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', rowHtml);
+        }
+
+        function removePackageInputRow(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) row.remove();
+        }
+
+        function resetGameForm() {
+            document.getElementById('editingGameId').value = '';
+            document.getElementById('gmName').value = '';
+            document.getElementById('gmCurrency').value = '💎';
+            document.getElementById('gmType').value = 'package';
+            document.getElementById('gmRateValue').value = '150';
+
+            document.getElementById('userInputContainer').innerHTML = '';
+            document.getElementById('packageInputContainer').innerHTML = '';
+            addPackageInputRow();
+            toggleGameTypeUI();
+
+            document.getElementById('saveGameBtnText').innerText = '💾 ບັນທຶກ & ເພີ່ມເກມເຣັດຮຽບຮ້ອຍ';
+            document.getElementById('cancelEditGameBtn').classList.add('hidden');
+        }
+
+        async function saveGameConfigAction() {
+            const editingId = document.getElementById('editingGameId').value;
+            const name = document.getElementById('gmName').value.trim();
+            const currency = document.getElementById('gmCurrency').value.trim() || '💎';
+            const type = document.getElementById('gmType').value;
+            const rateValue = parseFloat(document.getElementById('gmRateValue').value) || 1;
+
+            if (!name) return alert('❌ ກະລຸນາກອກຊື່ເກມ!');
+
+            // 1. ເກັບຂໍ້ມູນຊ່ອງກອກຂອງລູກຄ້າ
+            let userInputs = [];
+            const uLabels = document.querySelectorAll('.uinput-label');
+            const uPlaceholders = document.querySelectorAll('.uinput-placeholder');
+            uLabels.forEach((el, idx) => {
+                const lbl = el.value.trim();
+                const ph = uPlaceholders[idx] ? uPlaceholders[idx].value.trim() : '';
+                if (lbl || ph) {
+                    userInputs.push({ label: lbl || 'ຂໍ້ມູນກອກ', placeholder: ph });
+                }
+            });
+
+            // 2. ເກັບຂໍ້ມູນແພັກເກັດ
+            let packages = [];
+            if (type === 'package') {
+                const nameInputs = document.querySelectorAll('.pkg-input-name');
+                const priceInputs = document.querySelectorAll('.pkg-input-price');
+                const descInputs = document.querySelectorAll('.pkg-input-desc');
+
+                nameInputs.forEach((el, idx) => {
+                    const pName = el.value.trim();
+                    const pPrice = parseFloat(priceInputs[idx].value) || 0;
+                    const pDesc = descInputs[idx].value.trim();
+
+                    if (pName && pPrice > 0) {
+                        packages.push({ name: pName, price: pPrice, desc: pDesc });
+                    }
+                });
+
+                if (packages.length === 0) return alert('❌ ກະລຸນາກອກຂໍ້ມູນແພັກເກັດຢ່າງນ້ອຍ 1 ລາຍການ!');
+            }
+
+            const payload = {
+                name, currency, type, rate_value: rateValue, packages, user_inputs: userInputs
+            };
+
+            if (editingId) {
+                const { error } = await db.from('games').update(payload).eq('id', editingId);
+                if (error) return alert('❌ ບໍ່ສາມາດແກ້ໄຂເກມໄດ້: ' + error.message);
+                alert(`✅ ແກ້ໄຂເກມ "${name}" ເຣັດຮຽບຮ້ອຍ!`);
+            } else {
+                const { error } = await db.from('games').insert([payload]);
+                if (error) return alert('❌ ບໍ່ສາມາດເພີ່ມເກມໄດ້: ' + error.message);
+                alert(`🎉 ເພີ່ມເກມ "${name}" ເຂົ້າລະບົບສຳເລັດ!`);
+            }
+
+            resetGameForm();
+            loadAdminData();
+        }
+
+        function editGameAdmin(game) {
+            document.getElementById('editingGameId').value = game.id;
+            document.getElementById('gmName').value = game.name;
+            document.getElementById('gmCurrency').value = game.currency || '💎';
+            document.getElementById('gmType').value = game.type;
+            document.getElementById('gmRateValue').value = game.rate_value || 150;
+
+            // ເອົາຊ່ອງກອກລູກຄ້າ
+            const uContainer = document.getElementById('userInputContainer');
+            uContainer.innerHTML = '';
+            if (game.user_inputs && game.user_inputs.length > 0) {
+                game.user_inputs.forEach(inp => addCustomInputRow(inp));
+            }
+
+            // ເອົາແພັກເກັດ
+            const pContainer = document.getElementById('packageInputContainer');
+            pContainer.innerHTML = '';
+            if (game.type === 'package' && game.packages && game.packages.length > 0) {
+                game.packages.forEach(pkg => addPackageInputRow(pkg));
+            } else {
+                addPackageInputRow();
+            }
+
+            toggleGameTypeUI();
+            document.getElementById('saveGameBtnText').innerText = '💾 ບັນທຶກການແກ້ໄຂເກມ';
+            document.getElementById('cancelEditGameBtn').classList.remove('hidden');
+            window.scrollTo({ top: document.getElementById('gmName').offsetTop - 100, behavior: 'smooth' });
+        }
+
+        async function deleteGameAdmin(gameId, gameName) {
+            if (!confirm(`⚠️ ທ່ານແນ່ໃຈບໍວ່າຕ້ອງການລຶບເກມ "${gameName}" ອອກຈາກລະບົບ?`)) return;
+            const { error } = await db.from('games').delete().eq('id', gameId);
+            if (error) return alert('❌ ລຶບບໍ່ສຳເລັດ: ' + error.message);
+            alert(`🗑️ ລຶບເກມ "${gameName}" ເຣັດຮຽບຮ້ອຍ!`);
+            loadAdminData();
+        }
+
+        // ====================================================
+        // 🔥🔥🔥 2. ຟັງຊັນສະແດງເກມໄດນາມິກ (USER DASHBOARD) 🔥🔥🔥
+        // ====================================================
+
+        async function loadDynamicGamesUser() {
+            const { data, error } = await db.from('games').select('*').order('created_at', { ascending: true });
+            const tabsContainer = document.getElementById('userGameTabs');
+            if (!tabsContainer) return;
+
+            if (error || !data || data.length === 0) {
+                tabsContainer.innerHTML = '<p class="text-xs text-slate-400">ບໍ່ທັນມີລາຍການເກມໃນລະບົບ</p>';
+                document.getElementById('userGameContent').innerHTML = '';
+                return;
+            }
+
+            loadedGamesList = data;
+            if (!selectedGameObj || !loadedGamesList.find(g => g.id === selectedGameObj.id)) {
+                selectedGameObj = loadedGamesList[0];
+            }
+
+            tabsContainer.innerHTML = loadedGamesList.map(gm => `
+                <button type="button" onclick="selectUserGameTab('${gm.id}')"
+                    class="game-tab-btn whitespace-nowrap px-4 py-2 text-xs font-bold rounded-2xl border transition ${selectedGameObj.id === gm.id ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200'}">
+                    ${gm.name}
+                </button>
+            `).join('');
+
+            renderUserGameContent();
+        }
+
+        function selectUserGameTab(gameId) {
+            selectedGameObj = loadedGamesList.find(g => g.id === gameId);
+            selectedPkgIndex = 0;
+            loadDynamicGamesUser();
+        }
+
+        function renderUserGameContent() {
+            const container = document.getElementById('userGameContent');
+            if (!container || !selectedGameObj) return;
+
+            // 1. ສະແດງຊ່ອງກອກຂໍ້ມູນລູກຄ້າ (Custom Dynamic Inputs)
+            let customInputsHtml = '';
+            const uInputs = selectedGameObj.user_inputs || [];
+            if (uInputs.length > 0) {
+                customInputsHtml = uInputs.map((inp, idx) => `
+                    <div class="mb-3">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">${inp.label || 'ຂໍ້ມູນ'}:</label>
+                        <input type="text" id="custom_uinput_${idx}" placeholder="${inp.placeholder || 'ປ້ອນຂໍ້ມູນ...'}" class="dynamic-custom-input w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none font-bold focus:border-blue-500">
+                    </div>
+                `).join('');
+            }
+
+            // 2. ສະແດງເນື້ອຫາແພັກເກັດ ຫຼື ເຣດ
+            if (selectedGameObj.type === 'package') {
+                const pkgs = selectedGameObj.packages || [];
+                container.innerHTML = `
+                    ${customInputsHtml}
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ເລືອກແພັກເກັດ:</label>
+                    <div class="max-h-60 overflow-y-auto space-y-2 pr-1">
+                        ${pkgs.length === 0 ? '<p class="text-xs text-slate-400">ບໍ່ມີແພັກເກັດ</p>' : pkgs.map((pkg, idx) => `
+                            <div class="card cursor-pointer" onclick="document.getElementById('pkg_rad_${idx}').checked = true; selectedPkgIndex = ${idx}">
+                                <div class="flex items-center gap-2">
+                                    <input type="radio" name="selectedUserPkg" id="pkg_rad_${idx}" value="${idx}" ${idx === 0 ? 'checked' : ''} class="w-4 h-4 text-blue-600">
+                                    <div>
+                                        <p class="card-title cursor-pointer">${pkg.name} ${selectedGameObj.currency}</p>
+                                        ${pkg.desc ? `<p class="text-[10px] text-slate-400">${pkg.desc}</p>` : ''}
+                                    </div>
+                                </div>
+                                <span class="card-price">${Number(pkg.price).toLocaleString()} ₭</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (selectedGameObj.type === 'rate') {
+                const rate = selectedGameObj.rate_value || 1;
+                container.innerHTML = `
+                    ${customInputsHtml}
+                    <div class="bg-purple-50/60 p-4 rounded-2xl border border-purple-200/80 space-y-3 mt-1">
+                        <label class="block text-xs font-bold text-purple-900 uppercase tracking-wider">
+                            ປ້ອນຈຳນວນເງິນກີບ ຫຼື ${selectedGameObj.currency} (1 ${selectedGameObj.currency} = ${rate.toLocaleString()} ₭):
+                        </label>
+                        <input type="text" id="userRateCalcInput" oninput="calculateUserRateAuto()" 
+                            placeholder="ເຊັ່ນ: 10000, 15k, 100${selectedGameObj.currency}..." 
+                            class="w-full p-3.5 bg-white border border-purple-200 rounded-2xl text-sm font-bold text-slate-800 outline-none">
+                        
+                        <div class="p-3 bg-white rounded-xl border border-purple-100 shadow-sm">
+                            <p id="userRateCalcResult" class="text-xs text-purple-700 font-bold">👉 ຜົນການຄິດໄລ່: 0 ${selectedGameObj.currency} = 0 ₭</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function calculateUserRateAuto() {
+            if (!selectedGameObj || selectedGameObj.type !== 'rate') return;
+            const input = document.getElementById('userRateCalcInput').value.trim();
+            const rate = selectedGameObj.rate_value || 1;
+            const curr = selectedGameObj.currency || '💎';
+
+            if (!input) {
+                document.getElementById('userRateCalcResult').innerText = `👉 ຜົນການຄິດໄລ່: 0 ${curr} = 0 ₭`;
+                return;
+            }
+
+            let str = input.toLowerCase();
+            let isGameCurrency = str.includes(curr.toLowerCase()) || str.includes('r') || str.includes('💎');
+
+            if (isGameCurrency) {
+                let gVal = parseFloat(str.replace(/[^0-9.]/g, '')) || 0;
+                let kVal = Math.ceil(gVal * rate);
+                document.getElementById('userRateCalcResult').innerText = `👉 ຜົນການຄິດໄລ່: ${gVal.toLocaleString()} ${curr} = ${kVal.toLocaleString()} ₭`;
+            } else {
+                let kVal = parseKipAmount(str);
+                let gVal = Math.floor(kVal / rate);
+                document.getElementById('userRateCalcResult').innerText = `👉 ຜົນການຄິດໄລ່: ${gVal.toLocaleString()} ${curr} = ${kVal.toLocaleString()} ₭`;
+            }
+        }
+
+        async function buyGamePackage() {
+            if (!selectedGameObj) return alert('❌ ກະລຸນາເລືອກເກມກ່ອນ!');
+
+            // ເກັບຂໍ້ມູນຈາກຊ່ອງກອກຂອງລູກຄ້າ
+            let filledInfoList = [];
+            const uInputs = selectedGameObj.user_inputs || [];
+            for (let i = 0; i < uInputs.length; i++) {
+                const el = document.getElementById(`custom_uinput_${i}`);
+                const val = el ? el.value.trim() : '';
+                if (!val) {
+                    return alert(`❌ ກະລຸນາກອກ: ${uInputs[i].label || 'ຂໍ້ມູນກອກ'}!`);
+                }
+                filledInfoList.push(`${uInputs[i].label}: ${val}`);
+            }
+
+            const infoDetailString = filledInfoList.length > 0 ? filledInfoList.join(' | ') : 'ບໍ່ມີຂໍ້ມູນກອກ';
+
+            let packageName = '';
+            let totalPrice = 0;
+
+            if (selectedGameObj.type === 'package') {
+                const pkgs = selectedGameObj.packages || [];
+                const selectedRad = document.querySelector('input[name="selectedUserPkg"]:checked');
+                if (!selectedRad) return alert('❌ ກະລຸນາເລືອກແພັກເກັດ!');
+
+                const idx = parseInt(selectedRad.value);
+                const pkg = pkgs[idx];
+                if (!pkg) return alert('❌ ບໍ່ພົບແພັກເກັດ!');
+
+                packageName = `${selectedGameObj.name}: ${pkg.name} ${selectedGameObj.currency}`;
+                totalPrice = pkg.price;
+            } else if (selectedGameObj.type === 'rate') {
+                const input = document.getElementById('userRateCalcInput') ? document.getElementById('userRateCalcInput').value.trim() : '';
+                const rate = selectedGameObj.rate_value || 1;
+                const curr = selectedGameObj.currency || '💎';
+
+                let str = input.toLowerCase();
+                let isGameCurrency = str.includes(curr.toLowerCase()) || str.includes('r') || str.includes('💎');
+
+                let gVal = 0;
+                let kVal = 0;
+
+                if (isGameCurrency) {
+                    gVal = parseFloat(str.replace(/[^0-9.]/g, '')) || 0;
+                    kVal = Math.ceil(gVal * rate);
+                } else {
+                    kVal = parseKipAmount(str);
+                    gVal = Math.floor(kVal / rate);
+                }
+
+                if (kVal <= 0 || gVal <= 0) return alert('❌ ກະລຸນາກອກຈຳນວນເງິນ ຫຼື ຈຳນວນເກມໃຫ້ຖືກຕ້ອງ!');
+
+                packageName = `${selectedGameObj.name} (ເຣດ): ${gVal.toLocaleString()} ${curr}`;
+                totalPrice = kVal;
+            }
+
+            if (currentUser.balance < totalPrice) {
+                alert(`⛔ ເງິນໃນບັນຊີຂອງທ່ານບໍ່ພໍ!\n- ຍອດເງິນທີ່ມີ: ${currentUser.balance.toLocaleString()} ₭\n- ລາຄາອໍເດີ: ${totalPrice.toLocaleString()} ₭`);
+                return;
+            }
+
+            const isConfirm = confirm(`❓ ຢືນຢັນການສັ່ງຊື້:\n----------------------\n🎮 ເກມ: ${selectedGameObj.name}\n📝 ຂໍ້ມູນກອກ: ${infoDetailString}\n📦 ລາຍການ: ${packageName}\n💰 ລາຄາ: ${totalPrice.toLocaleString()} ₭\n----------------------\nກົດ "OK" ເພື່ອຢືນຢັນ`);
+            if (!isConfirm) return;
+
+            const newBal = currentUser.balance - totalPrice;
+            await db.from('users').update({ balance: newBal }).eq('id', currentUser.id);
+            await db.from('transactions').insert([{
+                username: currentUser.username,
+                type: 'game',
+                amount: totalPrice,
+                status: 'pending',
+                details: `ເຕີມ ${packageName} (${infoDetailString})`
+            }]);
+
+            sendDiscordNotification(`🎮 **ອໍເດີເຕີມເກມໃໝ່**:\n- ຜູ້ໃຊ້: **${currentUser.username}**\n- ລາຍການ: ${packageName}\n- ລາຄາ: **${totalPrice.toLocaleString()} ₭**\n- ຂໍ້ມູນກອກ: \`${infoDetailString}\``);
+
+            currentUser.balance = newBal;
+            localStorage.setItem('app_user_session', JSON.stringify(currentUser));
+            alert('🎉 ສຳເລັດ! ສົ່ງອໍເດີເຕີມເກມແລ້ວ ກະລຸນາຖ້າ Admin ດຳເນີນການ.');
+            showUserUI();
+        }
+
+        // ====================================================
+        // 3. ຟັງຊັນອື່ນໆ (AUTH, TICKET, CARD, ADMIN DATA)
+        // ====================================================
 
         function generateRandomTicketCode() {
             const randomLength = Math.floor(Math.random() * (20 - 8 + 1)) + 8;
@@ -767,9 +1168,7 @@
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath(); ctx.roundRect(550, 95, 200, 200, 16); ctx.fill();
                 ctx.strokeStyle = theme.border; ctx.lineWidth = 1.5; ctx.stroke();
-
                 ctx.drawImage(qrImage, 560, 105, 180, 180);
-
                 ctx.fillStyle = theme.textHeader;
                 ctx.font = 'bold 16px "Noto Sans Lao", sans-serif';
                 ctx.fillText('ສະແກນເພື່ອແລກ', 585, 330);
@@ -822,7 +1221,6 @@
                 return;
             }
 
-            // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອສ້າງປີ້
             sendDiscordNotification(`🎟️ **Admin ສ້າງປີ້ແລກເງິນໃໝ່**\n- ລະຫັດປີ້: \`${activeGeneratedCode}\`\n- ມູນຄ່າ: ${amount.toLocaleString()} ₭\n- ເງື່ອນໄຂ: ${conditionText}`);
 
             renderCanvasTicket('popupTicketCanvas', {
@@ -844,9 +1242,7 @@
                         text: `🎟️ ເຈົ້າໄດ້ຮັບປີ້ແລກປ່ຽນ!\n📌 ລະຫັດ: ${activeGeneratedCode}\nນຳລະຫັດນີ້ໄປສະແກນແລກເງິນໄດ້ເລີຍ!`,
                     });
                 } catch (e) {}
-            } else {
-                copyTicketCodeText();
-            }
+            } else { copyTicketCodeText(); }
         }
 
         function downloadTicketCanvas() {
@@ -868,156 +1264,12 @@
             modal.classList.remove('flex');
         }
 
-        function renderGameTabs() {
-            const tabContainer = document.getElementById('gameTabButtons');
-            if (!tabContainer) return;
-            tabContainer.innerHTML = gameList.map(game => `
-                <button type="button" onclick="selectGameTab('${game.id}')" 
-                    id="tab_btn_${game.id}" 
-                    class="game-tab-btn flex-1 py-2.5 px-3 text-xs font-bold rounded-2xl border transition ${selectedGameId === game.id ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200'}">
-                    ${game.name}
-                </button>
-            `).join('');
-            renderGameContent();
-        }
-
-        function selectGameTab(gameId) {
-            selectedGameId = gameId;
-            document.querySelectorAll('.game-tab-btn').forEach(btn => {
-                btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600', 'shadow-sm');
-                btn.classList.add('bg-slate-50', 'text-slate-600', 'border-slate-200');
-            });
-            const activeBtn = document.getElementById(`tab_btn_${gameId}`);
-            if (activeBtn) {
-                activeBtn.classList.remove('bg-slate-50', 'text-slate-600', 'border-slate-200');
-                activeBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-600', 'shadow-sm');
-            }
-            renderGameContent();
-        }
-
-        function switchRobloxType(type) {
-            robloxType = type;
-            renderGameContent();
-        }
-
-        function renderGameContent() {
-            const container = document.getElementById('gameContentArea');
-            if (!container) return;
-
-            if (selectedGameId === 'freefire') {
-                container.innerHTML = `
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">ID ເກມ Free Fire (UID):</label>
-                        <input type="text" id="gameUID" placeholder="ປ້ອນ UID ເກມ Free Fire..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none transition mb-3">
-                    </div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ເລືອກແພັກເກັດ Free Fire:</label>
-                    <div class="max-h-60 overflow-y-auto space-y-2 pr-1">
-                        ${freeFirePackages.map((pkg, idx) => `
-                            <div class="card cursor-pointer" onclick="document.getElementById('pkg_${idx}').checked = true">
-                                <div class="flex items-center gap-2">
-                                    <input type="radio" name="selectedPkg" id="pkg_${idx}" value="${idx}" ${idx === 0 ? 'checked' : ''} class="w-4 h-4 text-blue-600">
-                                    <label for="pkg_${idx}" class="card-title cursor-pointer">${pkg.name}</label>
-                                </div>
-                                <span class="card-price">${pkg.price.toLocaleString()} ₭</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            } else if (selectedGameId === 'roblox') {
-                container.innerHTML = `
-                    <div class="flex gap-2 mb-3 bg-slate-100 p-1 rounded-2xl border border-slate-200">
-                        <button type="button" onclick="switchRobloxType('group')" class="flex-1 py-2 text-xs font-bold rounded-xl transition ${robloxType === 'group' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-600'}">👥 ເຕີມຜ່ານກຸ່ມ</button>
-                        <button type="button" onclick="switchRobloxType('idpass')" class="flex-1 py-2 text-xs font-bold rounded-xl transition ${robloxType === 'idpass' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-600'}">🆔 ເຕີມຜ່ານ ID</button>
-                    </div>
-
-                    ${robloxType === 'group' ? `
-                        <div class="p-3.5 bg-purple-50 border border-purple-200 rounded-2xl mb-3 text-xs text-purple-900">
-                            <p class="font-bold">⚠️ ສຳຄັນ:</p>
-                            <p class="mt-0.5">1. ຕ້ອງກົດເຂົ້າກຸ່ມ Roblox ກ່ອນເຕີມ!</p>
-                            <a href="${ROBLOX_GROUP_URL}" target="_blank" class="inline-block mt-1.5 text-purple-600 font-bold underline">🔗 ກົດບ່ອນນີ້ເພື່ອເຂົ້າກຸ່ມ Roblox</a>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">ຊື່ Roblox (Username):</label>
-                            <input type="text" id="robloxUsername" placeholder="ປ້ອນຊື່ Roblox..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none mb-3">
-                        </div>
-                    ` : `
-                        <div class="space-y-2 mb-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">ID / Username Roblox:</label>
-                                <input type="text" id="robloxUsername" placeholder="ປ້ອນ ID / Username..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none">
-                            </div>
-                        </div>
-                    `}
-
-                    <div class="bg-purple-50/60 p-4 rounded-2xl border border-purple-200/80 space-y-3">
-                        <label class="block text-xs font-bold text-purple-900 uppercase tracking-wider">ປ້ອນຈຳນວນ Robux ຫຼື ເງິນກີບ (1 R = ${ROBUX_RATE} ₭):</label>
-                        <input type="text" id="robloxInput" oninput="calculateRobloxAuto()" 
-                            placeholder="ເຊັ່ນ: 100r, 500R, 15k, 15000..." 
-                            class="w-full p-3.5 bg-white border border-purple-200 rounded-2xl text-sm font-bold text-slate-800 outline-none">
-                        <div class="p-3 bg-white rounded-xl border border-purple-100 shadow-sm">
-                            <p id="robloxCalcResult" class="text-xs text-purple-700 font-bold">👉 ຜົນການຄິດໄລ່: 0 Robux = 0 ₭</p>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        function calculateRobloxAuto() {
-            const input = document.getElementById('robloxInput').value;
-            const parsed = parseRobuxInput(input);
-            document.getElementById('robloxCalcResult').innerText = `👉 ຜົນການຄິດໄລ່: ${parsed.robux.toLocaleString()} Robux =${parsed.kip.toLocaleString()} ₭`;
-        }
-
-        async function buyGamePackage() {
-            let packageName = "";
-            let totalPrice = 0;
-            let targetDetails = "";
-
-            if (selectedGameId === 'freefire') {
-                const uid = document.getElementById('gameUID').value.trim();
-                if (!uid) return alert('❌ ກະລຸນາກອກ ID / UID ເກມກ່ອນ!');
-
-                const selectedRad = document.querySelector('input[name="selectedPkg"]:checked');
-                if (!selectedRad) return alert('❌ ກະລຸນາເລືອກແພັກເກັດ!');
-                const pkgIndex = parseInt(selectedRad.value);
-                const pkgObj = freeFirePackages[pkgIndex];
-
-                packageName = `Free Fire: ${pkgObj.name}`;
-                totalPrice = pkgObj.price;
-                targetDetails = `UID Free Fire: ${uid}`;
-            } 
-            else if (selectedGameId === 'roblox') {
-                const rUsername = document.getElementById('robloxUsername').value.trim();
-                if (!rUsername) return alert('❌ ກະລຸນາກອກ ຊື່/ID Roblox ກ່ອນ!');
-
-                const rInput = document.getElementById('robloxInput').value;
-                const parsed = parseRobuxInput(rInput);
-                if (parsed.kip <= 0 || parsed.robux <= 0) return alert('❌ ກະລຸນາກອກຈຳນວນ Robux ຫຼື ເງິນກີບໃຫ້ຖືກຕ້ອງ!');
-
-                packageName = `Roblox (${robloxType === 'group' ? 'ຜ່ານກຸ່ມ' : 'ຜ່ານ ID'}): ${parsed.robux.toLocaleString()} Robux`;
-                totalPrice = parsed.kip;
-                targetDetails = `ຊື່ Roblox: ${rUsername}`;
-            }
-
-            if (currentUser.balance < totalPrice) {
-                alert(`⛔ ເງິນໃນບັນຊີຂອງທ່ານບໍ່ພໍ!\n- ຍອດເງິນທີ່ມີ: ${currentUser.balance.toLocaleString()} ₭\n- ລາຄາອໍເດີ: ${totalPrice.toLocaleString()} ₭`);
-                return;
-            }
-
-            const isConfirm = confirm(`❓ ຢືນຢັນການສັ່ງຊື້:\n----------------------\n🎮 ເກມ: ${selectedGameId === 'freefire' ? 'Free Fire' : 'Roblox'}\n👤 ຂໍ້ມູນ: ${targetDetails}\n📦 ລາຍການ: ${packageName}\n💰 ລາຄາ: ${totalPrice.toLocaleString()} ₭\n----------------------\nກົດ "OK" ເພື່ອຢືນຢັນ`);
-            if (!isConfirm) return;
-
-            const newBal = currentUser.balance - totalPrice;
-            await db.from('users').update({ balance: newBal }).eq('id', currentUser.id);
-            await db.from('transactions').insert([{ username: currentUser.username, type: 'game', amount: totalPrice, status: 'pending', details: `ເຕີມ ${packageName} (${targetDetails})` }]);
-
-            // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອມີການສັ່ງຊື້ເຕີມເກມ
-            sendDiscordNotification(`🎮 **ອໍເດີເຕີມເກມໃໝ່**:\n- ຜູ້ໃຊ້: **${currentUser.username}**\n- ລາຍການ: ${packageName}\n- ລາຄາ: **${totalPrice.toLocaleString()} ₭**\n- ຂໍ້ມູນລູກຄ້າ: \`${targetDetails}\``);
-
-            currentUser.balance = newBal;
-            localStorage.setItem('app_user_session', JSON.stringify(currentUser));
-            alert('🎉 ສຳເລັດ! ສົ່ງອໍເດີເຕີມເກມແລ້ວ ກະລຸນາຖ້າ Admin ດຳເນີນການ.');
-            showUserUI();
+        function switchTab(tabNum) {
+            document.querySelectorAll('.tab-page').forEach(el => el.classList.add('hidden'));
+            const targetTab = document.getElementById(`tab${tabNum}`);
+            if (targetTab) targetTab.classList.remove('hidden');
+            if (tabNum === 1) loadDynamicGamesUser();
+            if (tabNum === 2) loadTxHistory();
         }
 
         async function submitCardTopUp() {
@@ -1038,7 +1290,6 @@
                 code_info: cardPin 
             }]);
 
-            // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອມີການເຕີມບັດ
             sendDiscordNotification(`💳 **ອໍເດີເຕີມບັດຫຼັກ ${cardType}**\n- ຜູ້ໃຊ້: **${currentUser.username}**\n- ເລກບັດ: \`${cardPin}\`\n- ຈຳນວນເງິນ: **${amt.toLocaleString()} ₭**`);
 
             document.getElementById('inputCardPin').value = '';
@@ -1081,10 +1332,7 @@
                     alert('🎉 ສະໝັກສະມາຊິກສຳເລັດ!');
                     currentUser = { ...data[0], role: 'user' };
                     localStorage.setItem('app_user_session', JSON.stringify(currentUser));
-
-                    // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອມີສະມາຊິກໃໝ່
                     sendDiscordNotification(`👤 **ມີສະມາຊິກໃໝ່ສະໝັກເຂົ້າໃຊ້ງານ**\n- ຊື່ຜູ້ໃຊ້: **${u}**\n- ເລກບັນຊີ: \`${acc}\``);
-
                     checkBanAndLoad();
                 }
             } else {
@@ -1140,371 +1388,496 @@
 
             document.getElementById('userQRCode').innerHTML = '';
             new QRCode(document.getElementById('userQRCode'), { text: currentUser.account_number, width: 45, height: 45 });
-            renderGameTabs();
+            loadDynamicGamesUser();
             setupRealtimeListeners();
-            loadTxHistory();
-        }
-
-        function switchTab(num) {
-            document.querySelectorAll('.tab-page').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`tab${num}`).classList.remove('hidden');
-        }
-
-        function showBigQrModal() {
-            document.getElementById('modalAccNo').innerText = `ເລກບັນຊີ: ${currentUser.account_number}`;
-            const container = document.getElementById('bigUserQRCode');
-            container.innerHTML = '';
-            new QRCode(container, { text: currentUser.account_number, width: 220, height: 220 });
-            document.getElementById('bigQrModal').classList.remove('hidden');
-            document.getElementById('bigQrModal').classList.add('flex');
-        }
-
-        function closeBigQrModal() {
-            document.getElementById('bigQrModal').classList.add('hidden');
-            document.getElementById('bigQrModal').classList.remove('flex');
-        }
-
-        async function showQRTransferModal() {
-            const { data } = await db.from('admin_settings').select('value').eq('key', 'qr_bank_url').single();
-            if(data && data.value) document.getElementById('adminQrDisplay').src = data.value;
-            document.getElementById('qrModal').classList.remove('hidden');
-            document.getElementById('qrModal').classList.add('flex');
-        }
-
-        function closeQRModal() {
-            document.getElementById('qrModal').classList.add('hidden');
-            document.getElementById('qrModal').classList.remove('flex');
-        }
-
-        async function submitQRTransfer() {
-            const rawAmt = document.getElementById('qrTransferAmount').value;
-            const amt = parseKipAmount(rawAmt);
-            if(!amt || amt <= 0) return alert('ກະລຸນາກອກຈຳນວນເງິນ!');
-            await db.from('transactions').insert([{ username: currentUser.username, type: 'qr_bank', amount: amt, status: 'pending', details: `ໂອນ Scan QR Bank` }]);
-            
-            // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອມີການໂອນ QR Bank
-            sendDiscordNotification(`📲 **ແຈ້ງໂອນ QR Bank**\n- ຊື່ບັນຊີ: **${currentUser.username}**\n- ຈຳນວນເງິນ: **${amt.toLocaleString()} ₭**`);
-            
-            closeQRModal();
-            alert('ແຈ້ງໂອນເງິນສຳເລັດ! ຖ້າ Admin ອະນຸມັດ.');
-            loadTxHistory();
-        }
-
-        async function redeemCodeAction() {
-            const codeInput = document.getElementById('inputRedeemCode').value.trim();
-            if(!codeInput) return alert('ກະລຸນາປ້ອນ ຫຼື ສະແກນລະຫັດໂຄ້ດ!');
-
-            const { data, error } = await db.from('promo_codes').select('*').eq('code', codeInput).single();
-            if (error || !data) return alert('❌ ບໍ່ພົບໂຄ້ດ/Barcode ນີ້ໃນລະບົບ!');
-
-            const maxUses = data.max_uses || 1;
-            const currentUses = data.current_uses || 0;
-            if (currentUses >= maxUses || data.is_used) return alert('❌ ໂຄ້ດນີ້ຖືກໃຊ້ງານຄົບຈຳນວນ/ໝົດແລ້ວ!');
-
-            const now = new Date();
-            if (data.start_date && new Date(data.start_date) > now) return alert('❌ ໂຄ້ດນີ້ຍັງບໍ່ເຖິງວັນສະແກນ!');
-            if (data.expire_date && new Date(data.expire_date) < now) return alert('❌ ໂຄ້ດນີ້ໝົດອາຍຸແລ້ວ!');
-
-            const newUses = currentUses + 1;
-            await db.from('promo_codes').update({ current_uses: newUses, is_used: newUses >= maxUses }).eq('id', data.id);
-
-            const newBal = currentUser.balance + data.amount;
-            await db.from('users').update({ balance: newBal }).eq('id', currentUser.id);
-            await db.from('transactions').insert([{ username: currentUser.username, type: 'redeem', amount: data.amount, status: 'success', details: `ແລກໂຄ້ດ: ${codeInput}` }]);
-
-            // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອແລກໂຄ້ດສຳເລັດ
-            sendDiscordNotification(`🎁 **ແລກໂຄ້ດ/Barcode ສຳເລັດ**\n- ຊື່ບັນຊີ: **${currentUser.username}**\n- ລະຫັດ: \`${codeInput}\`\n- ໄດ້ຮັບ: **+${data.amount.toLocaleString()} ₭**`);
-
-            currentUser.balance = newBal;
-            localStorage.setItem('app_user_session', JSON.stringify(currentUser));
-            playSound('money');
-            alert(`🎉 ສະແກນ/ແລກໂຄ້ດສຳເລັດ! ໄດ້ຮັບ +${data.amount.toLocaleString()} ₭`);
-            document.getElementById('inputRedeemCode').value = '';
-            showUserUI();
-        }
-
-        function toggleScanner() {
-            const readerDiv = document.getElementById('reader');
-            const btn = document.getElementById('scannerBtn');
-            if(!isScannerActive) {
-                readerDiv.classList.remove('hidden');
-                btn.innerText = "❌ ປິດກ້ອງສະແກນ";
-                isScannerActive = true;
-                html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-                html5QrcodeScanner.render((decodedText) => {
-                    document.getElementById('inputRedeemCode').value = decodedText;
-                    toggleScanner();
-                    redeemCodeAction();
-                });
-            } else {
-                if(html5QrcodeScanner) html5QrcodeScanner.clear();
-                readerDiv.classList.add('hidden');
-                btn.innerText = "📷 ເປີດກ້ອງສະແກນ QR";
-                isScannerActive = false;
-            }
-        }
-
-        function toggleAdminScanner() {
-            const readerDiv = document.getElementById('adminReader');
-            const btn = document.getElementById('adminScannerBtn');
-            if(!isAdminScannerActive) {
-                readerDiv.classList.remove('hidden');
-                btn.innerText = "❌ ປິດກ້ອງ";
-                isAdminScannerActive = true;
-                adminHtml5QrcodeScanner = new Html5QrcodeScanner("adminReader", { fps: 10, qrbox: 250 });
-                adminHtml5QrcodeScanner.render((decodedText) => {
-                    document.getElementById('adminTicketInput').value = decodedText;
-                    toggleAdminScanner();
-                    adminScanTicketAction();
-                });
-            } else {
-                if(adminHtml5QrcodeScanner) adminHtml5QrcodeScanner.clear();
-                readerDiv.classList.add('hidden');
-                btn.innerText = "📷 ເປີດກ້ອງສະແກນ";
-                isAdminScannerActive = false;
-            }
-        }
-
-        async function adminScanTicketAction() {
-            const ticketCode = document.getElementById('adminTicketInput').value.trim();
-            if(!ticketCode) return alert('ກະລຸນາປ້ອນ ຫຼື ສະແກນລະຫັດປີ້/ໂຄ້ດ!');
-
-            const { data, error } = await db.from('promo_codes').select('*').eq('code', ticketCode).single();
-            if (error || !data) return alert('❌ ບໍ່ພົບຂໍ້ມູນປີ້/ໂຄ້ດນີ້ໃນລະບົບ!');
-
-            const maxUses = data.max_uses || 1;
-            const currentUses = data.current_uses || 0;
-            if (currentUses >= maxUses || data.is_used) return alert(`❌ ປີ້/ໂຄ້ດນີ້ຖືກໃຊ້ງານແລ້ວ! (${currentUses}/${maxUses})`);
-
-            const now = new Date();
-            if (data.start_date && new Date(data.start_date) > now) return alert('❌ ປີ້/ໂຄ້ດນີ້ຍັງບໍ່ເຖິງກຳນົດເວລາໃຊ້ງານ!');
-            if (data.expire_date && new Date(data.expire_date) < now) return alert('❌ ປີ້/ໂຄ້ດນີ້ໝົດອາຍຸແລ້ວ!');
-
-            const isConfirm = confirm(`🎟️ ພົບຂໍ້ມູນປີ້/ໂຄ້ດ:\n- ລະຫັດ: ${data.code}\n- ມູນຄ່າ: ${data.amount.toLocaleString()} ₭\n- ຈຳນວນຄັ້ງທີ່ໃຊ້ໄດ້: ${currentUses}/${maxUses}\n\nກົດ "OK" ເພື່ອຢືນຢັນການແລກ/ຕັດປີ້ລູກຄ້າ`);
-            if(!isConfirm) return;
-
-            const newUses = currentUses + 1;
-            await db.from('promo_codes').update({ current_uses: newUses, is_used: newUses >= maxUses }).eq('id', data.id);
-
-            // 📣 ແຈ້ງເຕືອນລົງ Discord
-            sendDiscordNotification(`🎟️ **Admin ສະແກນປີ້/ໂຄ້ດໃຫ້ລູກຄ້າ**\n- ລະຫັດປີ້: \`${ticketCode}\`\n- ມູນຄ່າ: **${data.amount.toLocaleString()} ₭**\n- ສະຖານະ: ໃຊ້ງານແລ້ວ (${newUses}/${maxUses})`);
-
-            alert(`🎉 ສະແກນປີ້/ໂຄ້ດສຳເລັດ! (ມູນຄ່າ: ${data.amount.toLocaleString()} ₭)`);
-            document.getElementById('adminTicketInput').value = '';
-            loadAdminData();
-        }
-
-        async function transferMoney() {
-            const targetAcc = document.getElementById('transferTargetAcc').value.trim();
-            const amt = parseKipAmount(document.getElementById('transferAmount').value);
-            if(!targetAcc || !amt || amt <= 0) return alert('ກອກຂໍ້ມູນໃຫ້ຖືກຕ້ອງ!');
-            if (currentUser.balance < amt) return alert('❌ ຍອດເງິນບໍ່ພໍ!');
-
-            const { data: receiver } = await db.from('users').select('*').eq('account_number', targetAcc).single();
-            if (!receiver) return alert('❌ ບໍ່ພົບເລກບັນຊີຜູ້ຮັບ!');
-
-            const newSenderBal = currentUser.balance - amt;
-            await db.from('users').update({ balance: newSenderBal }).eq('id', currentUser.id);
-            await db.from('users').update({ balance: receiver.balance + amt }).eq('id', receiver.id);
-
-            await db.from('transactions').insert([{ username: currentUser.username, type: 'transfer_out', amount: amt, status: 'success', details: `ໂອນໃຫ້: ${receiver.username} (${targetAcc})` }]);
-            await db.from('transactions').insert([{ username: receiver.username, type: 'transfer_in', amount: amt, status: 'success', details: `ໄດ້ຮັບໂອນຈາກ: ${currentUser.username}` }]);
-
-            // 📣 ແຈ້ງເຕືອນລົງ Discord ເມື່ອມີການໂອນເງິນ
-            sendDiscordNotification(`💸 **ມີການໂອນເງິນລະຫວ່າງບັນຊີ**\n- ຜູ້ໂອນ: **${currentUser.username}**\n- ຜູ້ຮັບ: **${receiver.username}** (\`${targetAcc}\`)\n- ຈຳນວນເງິນ: **${amt.toLocaleString()} ₭**`);
-
-            currentUser.balance = newSenderBal;
-            localStorage.setItem('app_user_session', JSON.stringify(currentUser));
-            alert('💸 ໂອນເງິນສຳເລັດ!');
-            showUserUI();
-        }
-
-        async function changePasswordPrompt() {
-            const newPw = prompt("ປ້ອນລະຫັດຜ່ານໃໝ່:");
-            if(newPw) {
-                await db.from('users').update({ password: newPw }).eq('id', currentUser.id);
-                alert('🔑 ປ່ຽນລະຫັດຜ່ານສຳເລັດ!');
-            }
-        }
-
-        async function deleteAccountPrompt() {
-            if(confirm("⚠️ ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບບັນຊີ?")) {
-                await db.from('users').delete().eq('id', currentUser.id);
-                alert('ລຶບບັນຊີສຳເລັດ!');
-                logout();
-            }
         }
 
         async function loadTxHistory() {
-            const { data } = await db.from('transactions').select('*').eq('username', currentUser.username).order('created_at', { ascending: false });
-            const container = document.getElementById('txHistoryList');
-            if(!data || data.length === 0) return container.innerHTML = `<p class="text-center text-sm text-slate-400 py-8">ບໍ່ມີປະຫວັດທຸລະກຳ</p>`;
-            container.innerHTML = data.map(t => {
-                const color = t.status === 'success' ? 'text-emerald-600' : (t.status === 'pending' ? 'text-amber-500' : 'text-rose-500');
+            if (!currentUser) return;
+            const listEl = document.getElementById('txHistoryList');
+            listEl.innerHTML = '<p class="text-center text-sm text-slate-400 py-4">ກຳລັງໂຫຼດ...</p>';
+            
+            const { data, error } = await db.from('transactions')
+                .select('*')
+                .eq('username', currentUser.username)
+                .order('created_at', { ascending: false });
+
+            if (error || !data || data.length === 0) {
+                listEl.innerHTML = '<p class="text-center text-sm text-slate-400 py-8">ບໍ່ມີປະຫວັດທຸລະກຳ</p>';
+                return;
+            }
+
+            listEl.innerHTML = data.map(tx => {
+                let badgeClass = 'bg-amber-100 text-amber-700';
+                let statusText = '⏳ ລໍຖ້າ (ກຳລັງດຳເນີນການ)';
+                if (tx.status === 'approved' || tx.status === 'completed') {
+                    badgeClass = 'bg-emerald-100 text-emerald-700';
+                    statusText = '✅ ເຂົ້າແລ້ວ (ສຳເລັດ)';
+                } else if (tx.status === 'rejected') {
+                    badgeClass = 'bg-rose-100 text-rose-700';
+                    statusText = '❌ ບໍ່ເຂົ້າ (ຍົກເລີກ/ຄືນເງິນ)';
+                }
+
                 return `
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center text-sm">
-                    <div>
-                        <p class="font-bold text-slate-800">${t.details}</p>
-                        <p class="text-[10px] text-slate-400 mt-0.5">${new Date(t.created_at).toLocaleString()}</p>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-xs text-slate-800">${tx.details || tx.type}</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">${new Date(tx.created_at).toLocaleString('lo-LA')}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-sm ${tx.type === 'transfer_out' ? 'text-rose-600' : 'text-slate-800'}">${(tx.amount || 0).toLocaleString()} ₭</p>
+                            <span class="inline-block mt-1 px-2.5 py-0.5 text-[10px] font-bold rounded-full ${badgeClass}">${statusText}</span>
+                        </div>
                     </div>
-                    <span class="font-extrabold ${color}">${t.amount ? t.amount.toLocaleString()+' ₭' : '-'} <span class="text-[10px] uppercase block text-right font-normal text-slate-400">(${t.status})</span></span>
-                </div>`;
+                `;
             }).join('');
         }
 
-        async function loadAdminData() {
-            const { data: pendingTx } = await db.from('transactions').select('*').eq('status', 'pending');
-            const pendingContainer = document.getElementById('adminPendingTxList');
-            if(!pendingTx || pendingTx.length === 0) pendingContainer.innerHTML = `<p class="text-slate-500 text-sm py-2">ບໍ່ມີລາຍການລໍຖ້າ</p>`;
-            else {
-                pendingContainer.innerHTML = pendingTx.map(t => `
-                    <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
-                        <div>
-                            <p class="font-bold text-amber-400 text-sm">${t.username} <span class="text-slate-400 font-normal">| ${t.details}</span></p>
-                            <p class="text-slate-300 mt-1">ຈຳນວນ: <span class="font-bold text-emerald-400">${t.amount.toLocaleString()} ₭</span> ${t.code_info ? '| ລະຫັດບັດ: <span class="font-mono bg-slate-900 px-2 py-0.5 rounded text-amber-300">'+t.code_info+'</span>' : ''}</p>
-                        </div>
-                        <div class="flex gap-2 w-full sm:w-auto">
-                            <button onclick="adminApproveTx('${t.id}', '${t.username}', ${t.amount}, true, '${t.type}')" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-xl text-white font-bold transition">✔️ ສຳເລັດ</button>
-                            <button onclick="adminApproveTx('${t.id}', '${t.username}', ${t.amount}, false, '${t.type}')" class="flex-1 sm:flex-none bg-rose-600 hover:bg-rose-500 px-4 py-2 rounded-xl text-white font-bold transition">❌ ບໍ່ສຳເລັດ</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            const { data: users } = await db.from('users').select('*');
-            const tbody = document.getElementById('adminUserTableBody');
-            if(users) {
-                tbody.innerHTML = users.map(u => `
-                    <tr class="hover:bg-slate-800/50 transition">
-                        <td class="p-4 font-bold text-white">${u.username}</td>
-                        <td class="p-4 font-mono text-xs text-amber-400 font-bold">${u.password || '-'}</td>
-                        <td class="p-4 font-mono text-xs text-slate-400">${u.account_number}</td>
-                        <td class="p-4 text-emerald-400 font-bold">${u.balance.toLocaleString()} ₭</td>
-                        <td class="p-4">${u.is_banned ? '<span class="text-rose-400 font-bold text-xs bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20">⛔ ຖືກລະງັບ</span>' : '<span class="text-emerald-400 font-bold text-xs bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">✅ ປົກກະຕິ</span>'}</td>
-                        <td class="p-4 text-center space-x-1">
-                            <button onclick="adminQuickBan('${u.id}')" class="bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-white border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition">⛔ ລະງັບ</button>
-                            <button onclick="adminDeleteUser('${u.id}', '${u.username}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition">❌ ລຶບ</button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
-
-            const { data: promoCodes } = await db.from('promo_codes').select('*').order('created_at', { ascending: false });
-            const ticketTbody = document.getElementById('adminTicketTableBody');
-            if (promoCodes && promoCodes.length > 0) {
-                ticketTbody.innerHTML = promoCodes.map(c => `
-                    <tr class="hover:bg-slate-800/50 transition border-b border-slate-800/50">
-                        <td class="p-4 font-mono text-xs font-bold text-amber-400">${c.code}</td>
-                        <td class="p-4 font-bold text-emerald-400">${c.amount.toLocaleString()} ₭</td>
-                        <td class="p-4 text-xs font-bold text-slate-300">${c.current_uses} / ${c.max_uses >= 99999 ? '∞' : c.max_uses}</td>
-                        <td class="p-4 text-xs">
-                            ${(c.is_used || c.current_uses >= c.max_uses) 
-                                ? '<span class="text-rose-400 font-bold bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20">❌ ໃຊ້ໝົດແລ້ວ</span>' 
-                                : '<span class="text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">✅ ພ້ອມໃຊ້ງານ</span>'}
-                        </td>
-                        <td class="p-4 text-center space-x-1">
-                            <button onclick="adminShowPopupForCode('${c.code}', ${c.amount}, ${c.max_uses})" class="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition">🖼️ ເບິ່ງ/ດາວໂຫຼດ</button>
-                            <button onclick="adminDeleteTicket('${c.id}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition">❌ ລຶບ</button>
-                        </td>
-                    </tr>
-                `).join('');
-            } else {
-                ticketTbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">ບໍ່ທັນມີປີ້ໃນລະບົບ</td></tr>`;
-            }
-        }
-
-        function adminShowPopupForCode(code, amount, maxUses) {
-            activeGeneratedCode = code;
-            let conditionText = maxUses >= 99999 ? 'ໃຊ້ໄດ້ເລື້ອຍໆ (Unlimited)' : `ໃຊ້ໄດ້ ${maxUses} ເທື່ອ`;
-            renderCanvasTicket('popupTicketCanvas', {
-                amount, code, conditionText, dateText: 'ໃຊ້ໄດ້ຕະຫຼອດໄປ', hideMode: 'blur', themeKey: 'whiteGold', patternKey: 'waves'
-            });
-            const modal = document.getElementById('ticketShareModal');
+        function showQRTransferModal() {
+            const modal = document.getElementById('qrModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         }
 
-        async function adminDeleteTicket(ticketId) {
-            if(!confirm("⚠️ ແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບປີ້/ໂຄ້ດນີ້?")) return;
-            await db.from('promo_codes').delete().eq('id', ticketId);
-            alert('🗑️ ລຶບປີ້/ໂຄ້ດສຳເລັດ!');
+        function closeQRModal() {
+            const modal = document.getElementById('qrModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function submitQRTransfer() {
+            const amtInput = document.getElementById('qrTransferAmount').value;
+            const amt = parseKipAmount(amtInput);
+            if (amt <= 0) return alert('❌ ກະລຸນາກອກຈຳນວນເງິນໃຫ້ຖືກຕ້ອງ!');
+
+            await db.from('transactions').insert([{
+                username: currentUser.username,
+                type: 'qr_transfer',
+                amount: amt,
+                status: 'pending',
+                details: `ໂອນຜ່ານ QR Bank`
+            }]);
+
+            sendDiscordNotification(`💳 **ແຈ້ງໂອນເງິນ QR Bank**\n- ຜູ້ໃຊ້: **${currentUser.username}**\n- ຈຳນວນເງິນ: **${amt.toLocaleString()} ₭**`);
+
+            alert('🎉 ແຈ້ງໂອນເງິນສຳເລັດ! ກະລຸນາຖ້າ Admin ກວດສອບ ແລະ ອະນຸມັດ.');
+            document.getElementById('qrTransferAmount').value = '';
+            closeQRModal();
+            loadTxHistory();
+        }
+
+        function showBigQrModal() {
+            if (!currentUser) return;
+            document.getElementById('modalAccNo').innerText = `ເລກບັນຊີ: ${currentUser.account_number}`;
+            const bigQrEl = document.getElementById('bigUserQRCode');
+            bigQrEl.innerHTML = '';
+            new QRCode(bigQrEl, { text: currentUser.account_number, width: 180, height: 180 });
+            const modal = document.getElementById('bigQrModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeBigQrModal() {
+            const modal = document.getElementById('bigQrModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function toggleScanner() {
+            const readerEl = document.getElementById('reader');
+            const btn = document.getElementById('scannerBtn');
+            if (isScannerActive) {
+                if (html5QrcodeScanner) {
+                    html5QrcodeScanner.stop().then(() => {
+                        readerEl.classList.add('hidden');
+                        btn.innerText = '📷 ເປີດກ້ອງສະແກນ QR';
+                        isScannerActive = false;
+                    });
+                }
+            } else {
+                readerEl.classList.remove('hidden');
+                html5QrcodeScanner = new Html5Qrcode("reader");
+                html5QrcodeScanner.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 200, height: 200 } },
+                    (decodedText) => {
+                        document.getElementById('inputRedeemCode').value = decodedText;
+                        html5QrcodeScanner.stop();
+                        readerEl.classList.add('hidden');
+                        btn.innerText = '📷 ເປີດກ້ອງສະແກນ QR';
+                        isScannerActive = false;
+                        redeemCodeAction();
+                    },
+                    () => {}
+                ).catch(err => alert('❌ ບໍ່ສາມາດເປີດກ້ອງໄດ້: ' + err));
+                btn.innerText = '🛑 ປິດກ້ອງສະແກນ';
+                isScannerActive = true;
+            }
+        }
+
+        async function redeemCodeAction() {
+            const codeInput = document.getElementById('inputRedeemCode').value.trim();
+            if (!codeInput) return alert('❌ ກະລຸນາກອກ ຫຼື ສະແກນລະຫັດໂຄ້ດກ່ອນ!');
+
+            const { data, error } = await db.from('promo_codes').select('*').eq('code', codeInput).single();
+            if (error || !data) return alert('❌ ລະຫັດໂຄ້ດ/ປີ້ ນີ້ບໍ່ມີໃນລະບົບ ຫຼື ຖືກໃຊ້ໄປແລ້ວ!');
+
+            const now = new Date();
+            if (data.start_date && new Date(data.start_date) > now) return alert('❌ ໂຄ້ດນີ້ຍັງບໍ່ທັນເຖິງເວລາເລີ່ມໃຊ້ງານ!');
+            if (data.expire_date && new Date(data.expire_date) < now) return alert('❌ ໂຄ້ດນີ້ໝົດອາຍຸການໃຊ້ງານແລ້ວ!');
+
+            if (data.current_uses >= data.max_uses) return alert('❌ ໂຄ້ດນີ້ຖືກໃຊ້ງານຄົບຕາມຈຳນວນແລ້ວ!');
+
+            const newUses = data.current_uses + 1;
+            await db.from('promo_codes').update({ current_uses: newUses }).eq('id', data.id);
+
+            const newBal = (currentUser.balance || 0) + data.amount;
+            await db.from('users').update({ balance: newBal }).eq('id', currentUser.id);
+            await db.from('transactions').insert([{
+                username: currentUser.username,
+                type: 'code_redeem',
+                amount: data.amount,
+                status: 'completed',
+                details: `ແລກໂຄ້ດ/ປີ້: ${codeInput}`
+            }]);
+
+            sendDiscordNotification(`🎟️ **ມີການແລກໂຄ້ດ/ປີ້**\n- ຜູ້ໃຊ້: **${currentUser.username}**\n- ລະຫັດ: \`${codeInput}\`\n- ມູນຄ່າ: **${data.amount.toLocaleString()} ₭**`);
+
+            currentUser.balance = newBal;
+            localStorage.setItem('app_user_session', JSON.stringify(currentUser));
+            playSound('money');
+            alert(`🎉 ແລກໂຄ້ດສຳເລັດ! ທ່ານໄດ້ຮັບເງິນ: ${data.amount.toLocaleString()} ₭`);
+            document.getElementById('inputRedeemCode').value = '';
+            showUserUI();
+        }
+
+        async function transferMoney() {
+            const targetAcc = document.getElementById('transferTargetAcc').value.trim();
+            const amtInput = document.getElementById('transferAmount').value;
+            const amt = parseKipAmount(amtInput);
+
+            if (!targetAcc || amt <= 0) return alert('❌ ກະລຸນາກອກເລກບັນຊີຜູ້ຮັບ ແລະ ຈຳນວນເງິນໃຫ້ຖືກຕ້ອງ!');
+            if (targetAcc === currentUser.account_number) return alert('❌ ບໍ່ສາມາດໂອນເງິນຫາບັນຊີໂຕເອງໄດ້!');
+
+            if (currentUser.balance < amt) return alert('⛔ ຍອດເງິນຂອງທ່ານບໍ່ພໍ!');
+
+            const { data: recipient, error } = await db.from('users').select('*').eq('account_number', targetAcc).single();
+            if (error || !recipient) return alert('❌ ບໍ່ພົບເລກບັນຊີຜູ້ຮັບນີ້ໃນລະບົບ!');
+
+            const isConfirm = confirm(`❓ ຢືນຢັນການໂອນເງິນ:\n- ຫາບັນຊີ: ${recipient.username} (${targetAcc})\n- ຈຳນວນ: ${amt.toLocaleString()} ₭`);
+            if (!isConfirm) return;
+
+            const senderBal = currentUser.balance - amt;
+            await db.from('users').update({ balance: senderBal }).eq('id', currentUser.id);
+
+            const recipientBal = (recipient.balance || 0) + amt;
+            await db.from('users').update({ balance: recipientBal }).eq('id', recipient.id);
+
+            await db.from('transactions').insert([{
+                username: currentUser.username,
+                type: 'transfer_out',
+                amount: amt,
+                status: 'completed',
+                details: `ໂອນເງິນໃຫ້ ${recipient.username} (${targetAcc})`
+            }]);
+
+            await db.from('transactions').insert([{
+                username: recipient.username,
+                type: 'transfer_in',
+                amount: amt,
+                status: 'completed',
+                details: `ໄດ້ຮັບເງິນໂອນຈາກ ${currentUser.username}`
+            }]);
+
+            sendDiscordNotification(`💸 **ມີການໂອນເງິນລະຫວ່າງບັນຊີ**\n- ຜູ້ໂອນ: **${currentUser.username}**\n- ຜູ້ຮັບ: **${recipient.username}** (${targetAcc})\n- ຈຳນວນເງິນ: **${amt.toLocaleString()} ₭**`);
+
+            currentUser.balance = senderBal;
+            localStorage.setItem('app_user_session', JSON.stringify(currentUser));
+            alert('🎉 ໂອນເງິນສຳເລັດແລ້ວ!');
+            document.getElementById('transferTargetAcc').value = '';
+            document.getElementById('transferAmount').value = '';
+            showUserUI();
+        }
+
+        async function changePasswordPrompt() {
+            const newPass = prompt('🔑 ປ້ອນລະຫັດຜ່ານໃໝ່ຂອງທ່ານ:');
+            if (!newPass || newPass.trim() === '') return;
+            await db.from('users').update({ password: newPass.trim() }).eq('id', currentUser.id);
+            currentUser.password = newPass.trim();
+            localStorage.setItem('app_user_session', JSON.stringify(currentUser));
+            alert('✅ ປ່ຽນລະຫັດຜ່ານສຳເລັດ!');
+        }
+
+        async function deleteAccountPrompt() {
+            const isConfirm = confirm('⚠️ ທ່ານແນ່ໃຈບໍວ່າຕ້ອງການລຶບບັນຊີນີ້? ຂໍ້ມູນ ແລະ ຍອດເງິນຈະຖືກລຶບຖາວອນ!');
+            if (!isConfirm) return;
+            await db.from('users').delete().eq('id', currentUser.id);
+            alert('🗑️ ລຶບບັນຊີສຳເລັດແລ້ວ');
+            logout();
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('app_user_session');
+            if (userRealtimeChannel) db.removeChannel(userRealtimeChannel);
+            if (adminRealtimeChannel) db.removeChannel(adminRealtimeChannel);
+            document.getElementById('userContainer').classList.add('hidden');
+            document.getElementById('adminContainer').classList.add('hidden');
+            document.getElementById('authContainer').classList.remove('hidden');
+        }
+
+        async function loadAdminData() {
+            // ໂຫຼດລາຍການເກມ Admin Table
+            const { data: adminGames } = await db.from('games').select('*').order('created_at', { ascending: false });
+            const gmTableBody = document.getElementById('adminGameTableBody');
+            if (!adminGames || adminGames.length === 0) {
+                gmTableBody.innerHTML = '<tr><td colspan="6" class="p-3 text-center text-slate-500">ບໍ່ທັນມີເກມໃນລະບົບ</td></tr>';
+            } else {
+                gmTableBody.innerHTML = adminGames.map(g => {
+                    let detailText = '';
+                    if (g.type === 'rate') {
+                        detailText = `<span class="text-amber-400 font-bold">1 ${g.currency} = ${Number(g.rate_value).toLocaleString()} ₭</span>`;
+                    } else {
+                        const pkgs = g.packages || [];
+                        detailText = pkgs.map(p => `<span class="bg-slate-800 px-2 py-0.5 rounded text-[10px] text-emerald-300 font-bold mr-1 inline-block my-0.5">${p.name} (${Number(p.price).toLocaleString()}₭)</span>`).join('');
+                    }
+
+                    const uInps = g.user_inputs || [];
+                    const inputLabelsText = uInps.length > 0 
+                        ? uInps.map(i => `<span class="bg-indigo-950 text-indigo-300 border border-indigo-800 px-1.5 py-0.5 rounded text-[10px] mr-1">${i.label}</span>`).join('')
+                        : '<span class="text-slate-500 text-[10px]">ບໍ່ຕ້ອງກອກ</span>';
+
+                    return `
+                        <tr class="hover:bg-slate-800/50 transition">
+                            <td class="p-3 font-bold text-white">${g.name}</td>
+                            <td class="p-3 font-bold text-amber-400">${g.currency}</td>
+                            <td class="p-3">${g.type === 'rate' ? '<span class="text-purple-400 font-bold">📈 Rate</span>' : '<span class="text-emerald-400 font-bold">📦 Package</span>'}</td>
+                            <td class="p-3">${inputLabelsText}</td>
+                            <td class="p-3">${detailText || '-'}</td>
+                            <td class="p-3 text-center space-x-1">
+                                <button onclick='editGameAdmin(${JSON.stringify(g)})' class="bg-indigo-600/30 text-indigo-300 text-[10px] px-2.5 py-1 rounded-lg border border-indigo-500/30">✏️ ແກ້ໄຂ</button>
+                                <button onclick="deleteGameAdmin('${g.id}', '${g.name}')" class="bg-rose-600/30 text-rose-300 text-[10px] px-2.5 py-1 rounded-lg border border-rose-500/30">🗑️ ລຶບ</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // ໂຫຼດ Transactions Pending
+            const { data: pTx } = await db.from('transactions').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+            const pList = document.getElementById('adminPendingTxList');
+            if (!pTx || pTx.length === 0) {
+                pList.innerHTML = '<p class="text-slate-500 text-xs text-center py-4">ບໍ່ມີລາຍການລໍຖ້າອະນຸມັດ</p>';
+            } else {
+                pList.innerHTML = pTx.map(tx => `
+                    <div class="bg-slate-800 p-4 rounded-2xl flex flex-wrap justify-between items-center gap-2 border border-slate-700">
+                        <div>
+                            <p class="font-bold text-xs text-white">${tx.username} - <span class="text-amber-400">${tx.details || tx.type}</span></p>
+                            <p class="text-[10px] text-slate-400">${new Date(tx.created_at).toLocaleString('lo-LA')} ${tx.code_info ? '| Pin: ' + tx.code_info : ''}</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-sm text-emerald-400">${(tx.amount || 0).toLocaleString()} ₭</span>
+                            <button onclick="approveTx('${tx.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-xl font-bold transition">✔️ ອະນຸມັດ</button>
+                            <button onclick="rejectTx('${tx.id}')" class="bg-rose-600 hover:bg-rose-500 text-white text-xs px-3 py-1.5 rounded-xl font-bold transition">❌ ຍົກເລີກ/ຄືນເງິນ</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // ໂຫຼດ Users Table
+            const { data: users } = await db.from('users').select('*').order('created_at', { ascending: false });
+            const uBody = document.getElementById('adminUserTableBody');
+            if (!users || users.length === 0) {
+                uBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">ບໍ່ມີຜູ້ໃຊ້ໃນລະບົບ</td></tr>';
+            } else {
+                uBody.innerHTML = users.map(u => `
+                    <tr>
+                        <td class="p-4 font-bold text-xs text-white">${u.username}</td>
+                        <td class="p-4 font-mono text-xs text-amber-400 font-bold">${u.password}</td>
+                        <td class="p-4 font-mono text-xs text-slate-300">${u.account_number}</td>
+                        <td class="p-4 font-bold text-xs text-emerald-400">${(u.balance || 0).toLocaleString()} ₭</td>
+                        <td class="p-4 text-xs">${u.is_banned ? '<span class="text-rose-400 font-bold">⛔ ຖືກບລັອກ</span>' : '<span class="text-emerald-400 font-bold">✅ ປົກກະຕິ</span>'}</td>
+                        <td class="p-4 text-center">
+                            <div class="flex justify-center gap-1.5">
+                                ${u.is_banned 
+                                    ? `<button onclick="unbanUser('${u.id}')" class="bg-emerald-600/30 text-emerald-300 text-[10px] px-2.5 py-1 rounded-lg border border-emerald-500/30">ປົດບລັອກ</button>`
+                                    : `<button onclick="banUserPrompt('${u.id}')" class="bg-amber-600/30 text-amber-300 text-[10px] px-2.5 py-1 rounded-lg border border-amber-500/30">ບລັອກ</button>`
+                                }
+                                <button onclick="deleteUserAdmin('${u.id}')" class="bg-rose-600/30 text-rose-300 text-[10px] px-2.5 py-1 rounded-lg border border-rose-500/30">ລຶບ</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // ໂຫຼດ Tickets
+            const { data: tickets } = await db.from('promo_codes').select('*').order('created_at', { ascending: false });
+            const tBody = document.getElementById('adminTicketTableBody');
+            if (!tickets || tickets.length === 0) {
+                tBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">ບໍ່ມີປີ້ທີ່ສ້າງໄວ້</td></tr>';
+            } else {
+                tBody.innerHTML = tickets.map(tk => `
+                    <tr>
+                        <td class="p-4 font-mono font-bold text-xs text-amber-400">${tk.code}</td>
+                        <td class="p-4 font-bold text-xs text-emerald-400">${(tk.amount || 0).toLocaleString()} ₭</td>
+                        <td class="p-4 text-xs">${tk.current_uses} / ${tk.max_uses}</td>
+                        <td class="p-4 text-xs">${tk.current_uses >= tk.max_uses ? '<span class="text-rose-400">ໝົດແລ້ວ</span>' : '<span class="text-emerald-400">ໃຊ້ໄດ້</span>'}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteTicketAdmin('${tk.id}')" class="bg-rose-600/30 text-rose-300 text-[10px] px-2.5 py-1 rounded-lg border border-rose-500/30">ລຶບ</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        async function approveTx(txId) {
+            const { data: tx } = await db.from('transactions').select('*').eq('id', txId).single();
+            if (!tx) return;
+
+            if (tx.type.startsWith('card_') || tx.type === 'qr_transfer') {
+                const { data: user } = await db.from('users').select('*').eq('username', tx.username).single();
+                if (user) {
+                    const newBal = (user.balance || 0) + tx.amount;
+                    await db.from('users').update({ balance: newBal }).eq('id', user.id);
+                }
+            }
+
+            await db.from('transactions').update({ status: 'approved' }).eq('id', txId);
+            sendDiscordNotification(`✅ **Admin ອະນຸມັດທຸລະກຳ**\n- ຜູ້ໃຊ້: **${tx.username}**\n- ລາຍການ: ${tx.details || tx.type}\n- ຈຳນວນເງິນ: **${tx.amount.toLocaleString()} ₭**`);
+            loadAdminData();
+        }
+
+        async function rejectTx(txId) {
+            const { data: tx } = await db.from('transactions').select('*').eq('id', txId).single();
+            if (!tx) return;
+
+            if (tx.type === 'game') {
+                const { data: user } = await db.from('users').select('*').eq('username', tx.username).single();
+                if (user) {
+                    const refundBal = (user.balance || 0) + tx.amount;
+                    await db.from('users').update({ balance: refundBal }).eq('id', user.id);
+                }
+            }
+
+            await db.from('transactions').update({ status: 'rejected' }).eq('id', txId);
+            sendDiscordNotification(`❌ **Admin ຍົກເລີກ/ປະຕິເສດທຸລະກຳ**\n- ຜູ້ໃຊ້: **${tx.username}**\n- ລາຍການ: ${tx.details || tx.type}`);
             loadAdminData();
         }
 
         async function adminAdjustBalance(action) {
-            const uName = document.getElementById('adminUserTarget').value.trim();
-            const amt = parseKipAmount(document.getElementById('adminAmount').value);
-            const { data: u } = await db.from('users').select('*').eq('username', uName).single();
-            if(!u || !amt) return alert('ບໍ່ພົບຜູ້ໃຊ້ ຫຼື ຈຳນວນເງິນບໍ່ຖືກ!');
+            const targetUser = document.getElementById('adminUserTarget').value.trim();
+            const amtInput = document.getElementById('adminAmount').value;
+            const amt = parseKipAmount(amtInput);
 
-            const newBal = action === 'add' ? u.balance + amt : Math.max(0, u.balance - amt);
-            await db.from('users').update({ balance: newBal }).eq('id', u.id);
+            if (!targetUser || amt <= 0) return alert('❌ ກະລຸນາກອກຊື່ຜູ້ໃຊ້ ແລະ ຈຳນວນເງິນ!');
 
-            // 📣 ແຈ້ງເຕືອນລົງ Discord
-            sendDiscordNotification(`👑 **Admin ${action === 'add' ? 'ເພີ່ມເງິນ' : 'ລຶບເງິນ'}**\n- ຜູ້ໃຊ້: **${uName}**\n- ຈຳນວນ: **${amt.toLocaleString()} ₭**\n- ຍອດເງິນໃໝ່: **${newBal.toLocaleString()} ₭**`);
+            const { data: user, error } = await db.from('users').select('*').eq('username', targetUser).single();
+            if (error || !user) return alert('❌ ບໍ່ພົບຊື່ຜູ້ໃຊ້ນີ້!');
 
-            alert(`ປັບເງິນສຳເລັດ! ຍອດເງິນໃໝ່: ${newBal.toLocaleString()} ₭`);
+            let newBal = user.balance || 0;
+            if (action === 'add') newBal += amt;
+            else newBal = Math.max(0, newBal - amt);
+
+            await db.from('users').update({ balance: newBal }).eq('id', user.id);
+            await db.from('transactions').insert([{
+                username: user.username,
+                type: action === 'add' ? 'admin_add' : 'admin_deduct',
+                amount: amt,
+                status: 'completed',
+                details: action === 'add' ? `Admin ເພີ່ມເງິນໃຫ້` : `Admin ປັບຫຼຸດເງິນ`
+            }]);
+
+            alert(`🎉 ${action === 'add' ? 'ເພີ່ມເງິນ' : 'ລຶບເງິນ'} ໃຫ້ ${targetUser} ສຳເລັດ! (ຍອດໃໝ່: ${newBal.toLocaleString()} ₭)`);
+            document.getElementById('adminUserTarget').value = '';
+            document.getElementById('adminAmount').value = '';
             loadAdminData();
         }
 
         function uploadAdminQrImage() {
             const fileInput = document.getElementById('adminQrFileInput');
-            if (!fileInput.files || !fileInput.files[0]) return alert('ກະລຸນາເລືອກຮູບ!');
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                await db.from('admin_settings').upsert({ key: 'qr_bank_url', value: e.target.result });
-                alert('💾 ບັນທຶກຮູບ QR Bank ສຳເລັດ!');
-            };
-            reader.readAsDataURL(fileInput.files[0]);
-        }
-
-        async function adminApproveTx(txId, username, amount, isSuccess, txType) {
-            const status = isSuccess ? 'success' : 'failed';
-            await db.from('transactions').update({ status }).eq('id', txId);
-
-            if(isSuccess && txType && txType.includes('card')) {
-                const { data: u } = await db.from('users').select('*').eq('username', username).single();
-                if(u) await db.from('users').update({ balance: u.balance + amount }).eq('id', u.id);
-            }
-
-            // 📣 ແຈ້ງເຕືອນລົງ Discord
-            sendDiscordNotification(`📢 **ອັບເດດສະຖານະອໍເດີ**\n- ຜູ້ໃຊ້: **${username}**\n- ສະຖານະ: **${status === 'success' ? '✅ ສຳເລັດ (SUCCESS)' : '❌ ບໍ່ສຳເລັດ (FAILED)'}**`);
-
-            alert(`ເຮັດລາຍການ (${status}) ສຳເລັດ!`);
-            loadAdminData();
-        }
-
-        async function adminQuickBan(userId) {
-            const secStr = prompt("ປ້ອນຈຳນວນເວລາລະງັບ (ເຊັ່ນ: 60s, 10m, 2h):", "60");
-            if(!secStr) return;
-            let totalSec = parseInt(secStr) || 0;
-            if(secStr.endsWith('m')) totalSec = parseInt(secStr) * 60;
-            if(secStr.endsWith('h')) totalSec = parseInt(secStr) * 3600;
-
-            const bannedUntil = new Date(Date.now() + totalSec * 1000).toISOString();
-            await db.from('users').update({ is_banned: true, banned_until: bannedUntil }).eq('id', userId);
-            alert('⛔ ລະງັບບັນຊີສຳເລັດ!');
-            loadAdminData();
-        }
-
-        async function adminDeleteUser(userId, username) {
-            const confirmDelete = confirm(`⚠️ ແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບບັນຊີ "${username}" ທິ້ງ?`);
-            if (!confirmDelete) return;
-
-            const { error } = await db.from('users').delete().eq('id', userId);
-            if (error) {
-                alert('❌ ບໍ່ສາມາດລຶບບັນຊີໄດ້: ' + error.message);
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('adminQrDisplay').src = e.target.result;
+                    alert('💾 ອັບເດດຮູບ QR Bank ສຳເລັດ!');
+                };
+                reader.readAsDataURL(fileInput.files[0]);
             } else {
-                alert(`🗑️ ລຶບບັນຊີ ${username} ຢ່າງຖາວອນສຳເລັດ!`);
-                loadAdminData();
+                alert('❌ ກະລຸນາເລືອກຮູບພາບກ່ອນ!');
             }
         }
 
-        function logout() { 
-            if (userRealtimeChannel) db.removeChannel(userRealtimeChannel);
-            if (adminRealtimeChannel) db.removeChannel(adminRealtimeChannel);
-            localStorage.removeItem('app_user_session');
-            location.reload(); 
+        function toggleAdminScanner() {
+            const readerEl = document.getElementById('adminReader');
+            const btn = document.getElementById('adminScannerBtn');
+            if (isAdminScannerActive) {
+                if (adminHtml5QrcodeScanner) {
+                    adminHtml5QrcodeScanner.stop().then(() => {
+                        readerEl.classList.add('hidden');
+                        btn.innerText = '📷 ເປີດກ້ອງ';
+                        isAdminScannerActive = false;
+                    });
+                }
+            } else {
+                readerEl.classList.remove('hidden');
+                adminHtml5QrcodeScanner = new Html5Qrcode("adminReader");
+                adminHtml5QrcodeScanner.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 200, height: 200 } },
+                    (decodedText) => {
+                        document.getElementById('adminTicketInput').value = decodedText;
+                        adminHtml5QrcodeScanner.stop();
+                        readerEl.classList.add('hidden');
+                        btn.innerText = '📷 ເປີດກ້ອງ';
+                        isAdminScannerActive = false;
+                        adminScanTicketAction();
+                    },
+                    () => {}
+                ).catch(err => alert('❌ ບໍ່ສາມາດເປີດກ້ອງໄດ້: ' + err));
+                btn.innerText = '🛑 ປິດກ້ອງ';
+                isAdminScannerActive = true;
+            }
+        }
+
+        async function adminScanTicketAction() {
+            const codeInput = document.getElementById('adminTicketInput').value.trim();
+            if (!codeInput) return alert('❌ ກະລຸນາກອກ ຫຼື ສະແກນລະຫັດປີ້!');
+
+            const { data, error } = await db.from('promo_codes').select('*').eq('code', codeInput).single();
+            if (error || !data) return alert('❌ ບໍ່ພົບລະຫັດປື້ນີ້ໃນລະບົບ!');
+
+            alert(`🎟 ຂໍ້ມູນປີ້:\n- ລະຫັດ: ${data.code}\n- ມູນຄ່າ: ${data.amount.toLocaleString()} ₭\n- ຈຳນວນທີ່ໃຊ້ແລ້ວ: ${data.current_uses}/${data.max_uses}`);
+        }
+
+        async function banUserPrompt(userId) {
+            const secStr = prompt('⏰ ກະລຸນາກອກຈຳນວນວິນາທີທີ່ຕ້ອງການບລັອກ (ເຊັ່ນ: 60 ເພື່ອບລັອກ 1 ນາທີ):', '60');
+            if (!secStr) return;
+            const sec = parseInt(secStr) || 60;
+            const bannedUntil = new Date(Date.now() + sec * 1000).toISOString();
+
+            await db.from('users').update({ is_banned: true, banned_until: bannedUntil }).eq('id', userId);
+            alert(`⛔ ບລັອກຜູ້ໃຊ້ເປັນເວລາ ${sec} ວິນາທີສຳເລັດ!`);
+            loadAdminData();
+        }
+
+        async function unbanUser(userId) {
+            await db.from('users').update({ is_banned: false, banned_until: null }).eq('id', userId);
+            alert('✅ ປົດບລັອກຜູ້ໃຊ້ສຳເລັດ!');
+            loadAdminData();
+        }
+
+        async function deleteUserAdmin(userId) {
+            if (!confirm('⚠️ ທ່ານຕ້ອງການລຶບຜູ້ໃຊ້ນີ້ບໍ?')) return;
+            await db.from('users').delete().eq('id', userId);
+            alert('🗑️ ລຶບຜູ້ໃຊ້ສຳເລັດ!');
+            loadAdminData();
+        }
+
+        async function deleteTicketAdmin(ticketId) {
+            if (!confirm('⚠️ ທ່ານຕ້ອງການລຶບປີ້ນີ້ບໍ?')) return;
+            await db.from('promo_codes').delete().eq('id', ticketId);
+            alert('🗑️ ລຶບປີ້ສຳເລັດ!');
+            loadAdminData();
         }
     </script>
 </body>
